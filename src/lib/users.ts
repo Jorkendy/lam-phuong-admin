@@ -19,6 +19,18 @@ export interface UsersError {
   success: false;
 }
 
+export interface CreateUserRequest {
+  email: string;
+  role: string;
+  password: string;
+}
+
+export interface CreateUserResponse {
+  data: User;
+  message: string;
+  success: true;
+}
+
 export async function getUsers(token?: string): Promise<User[]> {
   if (!API_BASE_URL) {
     // Return empty array if API is not configured (for development)
@@ -84,5 +96,44 @@ export async function getUsers(token?: string): Promise<User[]> {
     console.error("Error fetching users:", error);
     return [];
   }
+}
+
+export async function createUser(
+  user: CreateUserRequest,
+  token?: string
+): Promise<User> {
+  if (!API_BASE_URL) {
+    throw new Error("API base URL is not configured");
+  }
+
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+  };
+
+  const authToken = token || (typeof window !== "undefined" ? getToken() : null);
+  if (authToken) {
+    headers.Authorization = `Bearer ${authToken}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}/users`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(user),
+  });
+
+  const data = (await response.json()) as CreateUserResponse | UsersError;
+
+  if (!response.ok) {
+    if ("error" in data) {
+      throw new Error(data.error.message || "Failed to create user");
+    }
+    throw new Error("Failed to create user");
+  }
+
+  if ("success" in data && data.success && "data" in data) {
+    return data.data;
+  }
+
+  throw new Error("Invalid response format");
 }
 

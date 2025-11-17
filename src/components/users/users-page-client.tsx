@@ -1,6 +1,9 @@
 "use client";
 
-import { Users } from "lucide-react";
+import { useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import { Plus, Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -11,6 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { CreateUserDialog } from "./create-user-dialog";
 import type { User } from "@/types/auth";
 
 interface UsersPageClientProps {
@@ -18,7 +22,18 @@ interface UsersPageClientProps {
 }
 
 export function UsersPageClient({ initialUsers }: UsersPageClientProps) {
-  const users = initialUsers;
+  const router = useRouter();
+  const [users, setUsers] = useState<User[]>(initialUsers);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+
+  const handleUserCreated = useCallback(
+    (newUser: User) => {
+      setUsers((prev) => [...prev, newUser]);
+      setIsCreateDialogOpen(false);
+      router.refresh();
+    },
+    [router]
+  );
 
   const getRoleBadgeVariant = (role: string) => {
     switch (role.toLowerCase()) {
@@ -35,20 +50,71 @@ export function UsersPageClient({ initialUsers }: UsersPageClientProps) {
     return role.charAt(0).toUpperCase() + role.slice(1);
   };
 
+  const getStatusBadgeVariant = (status?: string) => {
+    if (!status) return "secondary";
+    switch (status.toLowerCase()) {
+      case "active":
+        return "default";
+      case "need verify":
+      case "need_verify":
+        return "destructive";
+      case "disabled":
+        return "secondary";
+      default:
+        return "outline";
+    }
+  };
+
+  const getStatusColor = (status?: string) => {
+    if (!status) return "bg-gray-100 text-gray-700";
+    switch (status.toLowerCase()) {
+      case "active":
+        return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
+      case "need verify":
+      case "need_verify":
+        return "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400";
+      case "disabled":
+        return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400";
+      default:
+        return "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300";
+    }
+  };
+
+  const formatStatus = (status?: string) => {
+    if (!status) return "Active";
+    switch (status.toLowerCase()) {
+      case "need verify":
+      case "need_verify":
+        return "Need verify";
+      case "disabled":
+        return "Disabled";
+      case "active":
+        return "Active";
+      default:
+        return status;
+    }
+  };
+
   return (
     <div className="container mx-auto space-y-6">
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-primary/10 p-2">
-              <Users className="h-5 w-5 text-primary" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-primary/10 p-2">
+                <Users className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="text-2xl">Người dùng</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Danh sách tất cả người dùng trong hệ thống
+                </p>
+              </div>
             </div>
-            <div>
-              <CardTitle className="text-2xl">Người dùng</CardTitle>
-              <p className="text-sm text-muted-foreground mt-1">
-                Danh sách tất cả người dùng trong hệ thống
-              </p>
-            </div>
+            <Button onClick={() => setIsCreateDialogOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Thêm người dùng
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -60,9 +126,13 @@ export function UsersPageClient({ initialUsers }: UsersPageClientProps) {
               <h3 className="text-lg font-semibold mb-2">
                 Chưa có người dùng nào
               </h3>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground mb-4">
                 Không có dữ liệu người dùng để hiển thị
               </p>
+              <Button onClick={() => setIsCreateDialogOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Thêm người dùng
+              </Button>
             </div>
           ) : (
             <Table>
@@ -70,8 +140,8 @@ export function UsersPageClient({ initialUsers }: UsersPageClientProps) {
                 <TableRow>
                   <TableHead className="w-[80px]">STT</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>ID</TableHead>
                   <TableHead>Vai trò</TableHead>
+                  <TableHead>Trạng thái</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -81,12 +151,17 @@ export function UsersPageClient({ initialUsers }: UsersPageClientProps) {
                       {index + 1}
                     </TableCell>
                     <TableCell className="font-medium">{user.email}</TableCell>
-                    <TableCell className="text-muted-foreground font-mono text-sm">
-                      {user.id}
-                    </TableCell>
                     <TableCell>
                       <Badge variant={getRoleBadgeVariant(user.role)}>
                         {formatRole(user.role)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={getStatusBadgeVariant(user.status)}
+                        className={getStatusColor(user.status)}
+                      >
+                        {formatStatus(user.status)}
                       </Badge>
                     </TableCell>
                   </TableRow>
@@ -96,6 +171,12 @@ export function UsersPageClient({ initialUsers }: UsersPageClientProps) {
           )}
         </CardContent>
       </Card>
+
+      <CreateUserDialog
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+        onUserCreated={handleUserCreated}
+      />
     </div>
   );
 }
