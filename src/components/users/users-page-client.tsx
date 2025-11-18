@@ -29,7 +29,7 @@ export function UsersPageClient({ initialUsers }: UsersPageClientProps) {
   const handleUserCreated = useCallback(
     (newUser: User) => {
       setUsers((prev) => [...prev, newUser]);
-      setIsCreateDialogOpen(false);
+      // Don't close dialog here - let the dialog handle closing after showing success message
       router.refresh();
     },
     [router]
@@ -113,7 +113,7 @@ export function UsersPageClient({ initialUsers }: UsersPageClientProps) {
             </div>
             <Button onClick={() => setIsCreateDialogOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
-              Thêm người dùng
+              Mời người dùng
             </Button>
           </div>
         </CardHeader>
@@ -131,7 +131,7 @@ export function UsersPageClient({ initialUsers }: UsersPageClientProps) {
               </p>
               <Button onClick={() => setIsCreateDialogOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" />
-                Thêm người dùng
+                Mời người dùng
               </Button>
             </div>
           ) : (

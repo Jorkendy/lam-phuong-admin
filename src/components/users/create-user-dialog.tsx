@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, CheckCircle2, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -46,6 +46,8 @@ export function CreateUserDialog({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [emailError, setEmailError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [createdEmail, setCreatedEmail] = useState<string>("");
 
   const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -84,24 +86,46 @@ export function CreateUserDialog({
         role,
         password: DEFAULT_PASSWORD,
       });
-      setEmail("");
-      setRole("User");
-      onUserCreated(newUser);
+      setCreatedEmail(email.trim());
+      setSuccess(true);
+      setError(null);
+      setEmailError(null);
+      setIsLoading(false);
+      
+      // Call onUserCreated after a brief delay to ensure success message is visible
+      setTimeout(() => {
+        onUserCreated(newUser);
+      }, 100);
+      
+      // Close dialog after showing success message for 5 seconds
+      setTimeout(() => {
+        setEmail("");
+        setRole("User");
+        setSuccess(false);
+        setCreatedEmail("");
+        onOpenChange(false);
+      }, 5000);
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Không thể tạo người dùng"
+        err instanceof Error ? err.message : "Không thể mời người dùng"
       );
-    } finally {
       setIsLoading(false);
     }
   };
 
   const handleOpenChange = (newOpen: boolean) => {
-    if (!newOpen && !isLoading) {
+    // Prevent closing dialog when showing success message
+    if (!newOpen && success) {
+      return;
+    }
+    
+    if (!newOpen && !isLoading && !success) {
       setEmail("");
       setRole("User");
       setError(null);
       setEmailError(null);
+      setSuccess(false);
+      setCreatedEmail("");
     }
     onOpenChange(newOpen);
   };
@@ -110,13 +134,61 @@ export function CreateUserDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Thêm người dùng mới</DialogTitle>
+          <DialogTitle>
+            {success ? "Mời người dùng thành công" : "Mời người dùng mới"}
+          </DialogTitle>
           <DialogDescription>
-            Nhập thông tin để tạo người dùng mới. Mật khẩu mặc định là 123456.
+            {success
+              ? "Người dùng đã được mời thành công"
+              : "Nhập thông tin để mời người dùng mới. Mật khẩu mặc định là 123456."}
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
+        {success ? (
           <div className="grid gap-4 py-4">
+            <div className="rounded-md bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-4">
+              <div className="flex items-start gap-3">
+                <div className="rounded-full bg-green-100 dark:bg-green-900/40 p-1.5 mt-0.5">
+                  <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
+                </div>
+                <div className="flex-1 space-y-2">
+                  <p className="text-sm font-medium text-green-900 dark:text-green-100">
+                    Người dùng đã được mời thành công!
+                  </p>
+                  <div className="rounded-md bg-white dark:bg-green-950/50 p-3 space-y-2">
+                    <div className="flex items-center gap-2 text-sm text-green-800 dark:text-green-200">
+                      <Mail className="h-4 w-4" />
+                      <span className="font-medium">Email:</span>
+                      <span className="font-mono">{createdEmail}</span>
+                    </div>
+                    <div className="flex items-start gap-2 mt-2 pt-2 border-t border-green-200 dark:border-green-800">
+                      <Mail className="h-4 w-4 mt-0.5 text-green-600 dark:text-green-400" />
+                      <p className="text-sm font-medium text-green-800 dark:text-green-200">
+                        Vui lòng yêu cầu người dùng kiểm tra email để xác thực tài khoản.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                onClick={() => {
+                  setEmail("");
+                  setRole("User");
+                  setSuccess(false);
+                  setCreatedEmail("");
+                  onOpenChange(false);
+                }}
+                className="w-full"
+              >
+                Đóng
+              </Button>
+            </DialogFooter>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit}>
+            <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -171,16 +243,17 @@ export function CreateUserDialog({
             </Button>
             <Button type="submit" disabled={isLoading}>
               {isLoading ? (
-                "Đang tạo..."
+                "Đang gửi lời mời..."
               ) : (
                 <>
                   <Plus className="mr-2 h-4 w-4" />
-                  Tạo người dùng
+                  Mời người dùng
                 </>
               )}
             </Button>
           </DialogFooter>
         </form>
+        )}
       </DialogContent>
     </Dialog>
   );
