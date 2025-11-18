@@ -11,6 +11,7 @@ import {
   Package,
   Briefcase,
   FolderKanban,
+  FileText,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -49,6 +50,11 @@ const allNavItems: NavItem[] = [
     title: "Loại công việc",
     href: "/job-types",
     icon: FolderKanban,
+  },
+  {
+    title: "Tuyển dụng",
+    href: "/recruitment/create",
+    icon: FileText,
   },
   {
     title: "Người dùng",
@@ -128,7 +134,8 @@ export function Sidebar({ user }: SidebarProps = {}) {
         <nav className="flex-1 space-y-1 p-4">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = pathname === item.href;
+            // Check if pathname matches exactly or is a child route
+            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
 
             return (
               <Link
