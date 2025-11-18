@@ -15,23 +15,28 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAuthenticatedState, setIsAuthenticatedState] = useState(false);
-
-  useEffect(() => {
-    // Check if user is authenticated on mount
+  // Initialize state from localStorage using lazy initialization
+  const [user, setUser] = useState<User | null>(() => {
+    if (typeof window === "undefined") return null;
+    const userData = getUser();
+    return userData as User | null;
+  });
+  
+  const [isAuthenticatedState, setIsAuthenticatedState] = useState(() => {
+    if (typeof window === "undefined") return false;
     const token = getToken();
     const userData = getUser();
-    
-    if (token && userData) {
-      setUser(userData as User);
-      setIsAuthenticatedState(true);
-    } else {
-      setIsAuthenticatedState(false);
-    }
-    
-    setIsLoading(false);
+    return !!(token && userData);
+  });
+  
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Defer loading state update
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   const signIn = useCallback(async (credentials: SignInRequest) => {

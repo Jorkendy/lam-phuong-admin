@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -12,14 +12,16 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import type { User } from "@/types/auth";
 
 interface NavItem {
   title: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
+  requiredRole?: string[]; // Roles that can access this item
 }
 
-const navItems: NavItem[] = [
+const allNavItems: NavItem[] = [
   {
     title: "Bảng điều khiển",
     href: "/",
@@ -34,22 +36,48 @@ const navItems: NavItem[] = [
     title: "Người dùng",
     href: "/users",
     icon: Users,
+    requiredRole: ["Admin", "Super Admin"],
   },
 ];
 
+interface SidebarProps {
+  user?: User | null;
+}
+
 const SIDEBAR_STATE_KEY = "lp_sidebar_collapsed";
 
-export function Sidebar() {
+export function Sidebar({ user }: SidebarProps = {}) {
   const pathname = usePathname();
-  const [isCollapsed, setIsCollapsed] = useState(false);
-
-  // Load sidebar state from localStorage on mount
-  useEffect(() => {
+  
+  // Initialize state from localStorage using lazy initialization
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    if (typeof window === "undefined") return false;
     const savedState = localStorage.getItem(SIDEBAR_STATE_KEY);
     if (savedState !== null) {
-      setIsCollapsed(JSON.parse(savedState));
+      try {
+        return JSON.parse(savedState);
+      } catch {
+        return false;
+      }
     }
-  }, []);
+    return false;
+  });
+
+  // Filter nav items based on user role
+  const navItems = useMemo(() => {
+    return allNavItems.filter((item) => {
+      // If no requiredRole, item is accessible to all
+      if (!item.requiredRole) {
+        return true;
+      }
+      // If user is not logged in, hide restricted items
+      if (!user || !user.role) {
+        return false;
+      }
+      // Check if user's role is in the required roles
+      return item.requiredRole.includes(user.role);
+    });
+  }, [user]);
 
   // Save sidebar state to localStorage when it changes
   const handleToggle = () => {

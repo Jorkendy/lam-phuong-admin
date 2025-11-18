@@ -25,7 +25,7 @@ export function Navbar({ user }: NavbarProps) {
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="w-64 p-0">
-            <Sidebar />
+            <Sidebar user={user} />
           </SheetContent>
         </Sheet>
 

@@ -11,10 +11,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, User, ChevronDown } from "lucide-react";
+import { LogOut, User, ChevronDown, Lock } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { cn } from "@/lib/utils";
 import type { User as UserType } from "@/types/auth";
+import { ChangePasswordDialog } from "./change-password-dialog";
 
 interface UserMenuProps {
   user: UserType | null;
@@ -24,6 +25,7 @@ export function UserMenu({ user }: UserMenuProps) {
   const { signOut } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
   const handleSignOut = async () => {
     setIsLoggingOut(true);
@@ -124,6 +126,16 @@ export function UserMenu({ user }: UserMenuProps) {
         </DropdownMenuLabel>
         <DropdownMenuSeparator className="my-2" />
         <DropdownMenuItem
+          onClick={() => {
+            setIsChangePasswordOpen(true);
+            setIsOpen(false);
+          }}
+          className="cursor-pointer"
+        >
+          <Lock className="mr-2 h-4 w-4" />
+          <span>Đổi mật khẩu</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem
           disabled
           className="cursor-not-allowed opacity-50"
         >
@@ -144,6 +156,10 @@ export function UserMenu({ user }: UserMenuProps) {
           <span>{isLoggingOut ? "Đang đăng xuất..." : "Đăng xuất"}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
+      <ChangePasswordDialog
+        open={isChangePasswordOpen}
+        onOpenChange={setIsChangePasswordOpen}
+      />
     </DropdownMenu>
   );
 }

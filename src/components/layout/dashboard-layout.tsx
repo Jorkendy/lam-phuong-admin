@@ -25,7 +25,7 @@ export async function DashboardLayout({
     <div className="flex h-screen overflow-hidden">
       {/* Desktop Sidebar */}
       <aside className="hidden md:block">
-        <Sidebar />
+        <Sidebar user={user} />
       </aside>
 
       {/* Main Content */}
