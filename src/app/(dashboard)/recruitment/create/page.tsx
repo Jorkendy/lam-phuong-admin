@@ -3,9 +3,11 @@ import { CreateRecruitmentPostPageClient } from "@/components/recruitment/create
 import { getLocations } from "@/lib/locations";
 import { getJobCategories } from "@/lib/job-categories";
 import { getJobTypes } from "@/lib/job-types";
+import { getProductGroups } from "@/lib/product-groups";
 import type { Location } from "@/types/location";
 import type { JobCategory } from "@/types/job-category";
 import type { JobType } from "@/types/job-type";
+import type { ProductGroup } from "@/types/product-group";
 
 export default async function CreateRecruitmentPostPage() {
   const cookieStore = await cookies();
@@ -15,12 +17,14 @@ export default async function CreateRecruitmentPostPage() {
   let locations: Location[] = [];
   let jobCategories: JobCategory[] = [];
   let jobTypes: JobType[] = [];
+  let productGroups: ProductGroup[] = [];
 
   try {
-    [locations, jobCategories, jobTypes] = await Promise.all([
+    [locations, jobCategories, jobTypes, productGroups] = await Promise.all([
       getLocations(token || undefined),
       getJobCategories(token || undefined),
       getJobTypes(token || undefined),
+      getProductGroups(token || undefined),
     ]);
   } catch (error) {
     // Continue with empty arrays on error
@@ -34,6 +38,7 @@ export default async function CreateRecruitmentPostPage() {
       locations={locations}
       jobCategories={jobCategories}
       jobTypes={jobTypes}
+      productGroups={productGroups}
     />
   );
 }

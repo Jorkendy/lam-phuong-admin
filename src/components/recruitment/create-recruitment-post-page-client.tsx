@@ -9,18 +9,21 @@ import { CreateRecruitmentPostForm } from "./create-recruitment-post-form";
 import type { Location } from "@/types/location";
 import type { JobCategory } from "@/types/job-category";
 import type { JobType } from "@/types/job-type";
+import type { ProductGroup } from "@/types/product-group";
 import type { CreateRecruitmentPostRequest } from "@/types/recruitment-post";
 
 interface CreateRecruitmentPostPageClientProps {
   locations: Location[];
   jobCategories: JobCategory[];
   jobTypes: JobType[];
+  productGroups: ProductGroup[];
 }
 
 export function CreateRecruitmentPostPageClient({
   locations,
   jobCategories,
   jobTypes,
+  productGroups,
 }: CreateRecruitmentPostPageClientProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -66,6 +69,7 @@ export function CreateRecruitmentPostPageClient({
             locations={locations}
             jobCategories={jobCategories}
             jobTypes={jobTypes}
+            productGroups={productGroups}
             onSubmit={handleSubmit}
             isSubmitting={isSubmitting}
           />

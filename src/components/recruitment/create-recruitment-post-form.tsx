@@ -13,15 +13,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { MarkdownEditor } from "@/components/ui/markdown-editor";
+import { MultiSelect } from "@/components/ui/multi-select";
 import type { Location } from "@/types/location";
 import type { JobCategory } from "@/types/job-category";
 import type { JobType } from "@/types/job-type";
+import type { ProductGroup } from "@/types/product-group";
 import type { CreateRecruitmentPostRequest } from "@/types/recruitment-post";
 
 interface CreateRecruitmentPostFormProps {
   locations: Location[];
   jobCategories: JobCategory[];
   jobTypes: JobType[];
+  productGroups: ProductGroup[];
   onSubmit: (data: CreateRecruitmentPostRequest) => Promise<void>;
   isSubmitting: boolean;
 }
@@ -30,6 +34,7 @@ export function CreateRecruitmentPostForm({
   locations,
   jobCategories,
   jobTypes,
+  productGroups,
   onSubmit,
   isSubmitting,
 }: CreateRecruitmentPostFormProps) {
@@ -38,13 +43,15 @@ export function CreateRecruitmentPostForm({
     description: "",
     introduce: "",
     locationId: undefined,
-    jobCategoryId: undefined,
-    jobTypeId: undefined,
+    jobCategoryIds: [],
+    jobTypeIds: [],
+    productGroupIds: [],
     salaryMin: undefined,
     salaryMax: undefined,
     salaryCurrency: "VND",
     requirements: "",
     benefits: "",
+    applicationMethod: "",
     deadline: "",
     status: "draft",
   });
@@ -62,12 +69,6 @@ export function CreateRecruitmentPostForm({
       newErrors.description = "Mô tả công việc là bắt buộc";
     }
 
-    if (formData.salaryMin !== undefined && formData.salaryMax !== undefined) {
-      if (formData.salaryMin > formData.salaryMax) {
-        newErrors.salaryMax = "Mức lương tối đa phải lớn hơn mức lương tối thiểu";
-      }
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -83,26 +84,18 @@ export function CreateRecruitmentPostForm({
       ...formData,
       introduce: formData.introduce || undefined,
       locationId: formData.locationId || undefined,
-      jobCategoryId: formData.jobCategoryId || undefined,
-      jobTypeId: formData.jobTypeId || undefined,
+      jobCategoryIds: formData.jobCategoryIds && formData.jobCategoryIds.length > 0 ? formData.jobCategoryIds : undefined,
+      jobTypeIds: formData.jobTypeIds && formData.jobTypeIds.length > 0 ? formData.jobTypeIds : undefined,
+      productGroupIds: formData.productGroupIds && formData.productGroupIds.length > 0 ? formData.productGroupIds : undefined,
       salaryMin: formData.salaryMin || undefined,
       salaryMax: formData.salaryMax || undefined,
       requirements: formData.requirements || undefined,
       benefits: formData.benefits || undefined,
+      applicationMethod: formData.applicationMethod || undefined,
       deadline: formData.deadline || undefined,
     };
 
     await onSubmit(submitData);
-  };
-
-  const formatCurrency = (value: number | undefined): string => {
-    if (!value) return "";
-    return new Intl.NumberFormat("vi-VN").format(value);
-  };
-
-  const parseCurrency = (value: string): number | undefined => {
-    const cleaned = value.replace(/[^\d]/g, "");
-    return cleaned ? parseInt(cleaned, 10) : undefined;
   };
 
   return (
@@ -171,18 +164,17 @@ export function CreateRecruitmentPostForm({
           <Label htmlFor="description">
             Mô tả công việc <span className="text-destructive">*</span>
           </Label>
-          <Textarea
-            id="description"
-            placeholder="Mô tả chi tiết về công việc, trách nhiệm, yêu cầu..."
-            value={formData.description}
-            onChange={(e) => {
-              setFormData({ ...formData, description: e.target.value });
-              if (errors.description) setErrors({ ...errors, description: "" });
-            }}
-            disabled={isSubmitting}
-            rows={8}
-            className={errors.description ? "border-destructive" : ""}
-          />
+          <div className={errors.description ? "border border-destructive rounded-md" : ""}>
+            <MarkdownEditor
+              value={formData.description}
+              onChange={(value) => {
+                setFormData({ ...formData, description: value });
+                if (errors.description) setErrors({ ...errors, description: "" });
+              }}
+              placeholder="Mô tả chi tiết về công việc, trách nhiệm, yêu cầu..."
+              disabled={isSubmitting}
+            />
+          </div>
           {errors.description && (
             <p className="text-sm text-destructive">{errors.description}</p>
           )}
@@ -193,7 +185,7 @@ export function CreateRecruitmentPostForm({
       <div className="space-y-4">
         <h3 className="text-lg font-semibold">Chi tiết công việc</h3>
         
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-2">
             <Label htmlFor="locationId">Địa điểm</Label>
             <Select
@@ -217,142 +209,96 @@ export function CreateRecruitmentPostForm({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="jobCategoryId">Danh mục công việc</Label>
-            <Select
-              value={formData.jobCategoryId || undefined}
-              onValueChange={(value) =>
-                setFormData({ ...formData, jobCategoryId: value || undefined })
+            <Label htmlFor="jobCategoryIds">Danh mục công việc</Label>
+            <MultiSelect
+              options={jobCategories.map((category) => ({
+                label: category.name,
+                value: category.id,
+              }))}
+              selected={formData.jobCategoryIds || []}
+              onChange={(selected) =>
+                setFormData({ ...formData, jobCategoryIds: selected })
               }
-              disabled={isSubmitting}
-            >
-              <SelectTrigger id="jobCategoryId">
-                <SelectValue placeholder="Chọn danh mục" />
-              </SelectTrigger>
-              <SelectContent>
-                {jobCategories.map((category) => (
-                  <SelectItem key={category.id} value={category.id}>
-                    {category.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="jobTypeId">Loại công việc</Label>
-            <Select
-              value={formData.jobTypeId || undefined}
-              onValueChange={(value) =>
-                setFormData({ ...formData, jobTypeId: value || undefined })
-              }
-              disabled={isSubmitting}
-            >
-              <SelectTrigger id="jobTypeId">
-                <SelectValue placeholder="Chọn loại công việc" />
-              </SelectTrigger>
-              <SelectContent>
-                {jobTypes.map((type) => (
-                  <SelectItem key={type.id} value={type.id}>
-                    {type.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      </div>
-
-      {/* Salary */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Mức lương</h3>
-        
-        <div className="grid gap-4 md:grid-cols-3">
-          <div className="space-y-2">
-            <Label htmlFor="salaryMin">Lương tối thiểu (VND)</Label>
-            <Input
-              id="salaryMin"
-              type="text"
-              placeholder="Ví dụ: 10,000,000"
-              value={formData.salaryMin ? formatCurrency(formData.salaryMin) : ""}
-              onChange={(e) => {
-                const value = parseCurrency(e.target.value);
-                setFormData({ ...formData, salaryMin: value });
-                if (errors.salaryMax) setErrors({ ...errors, salaryMax: "" });
-              }}
+              placeholder="Chọn danh mục"
               disabled={isSubmitting}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="salaryMax">Lương tối đa (VND)</Label>
-            <Input
-              id="salaryMax"
-              type="text"
-              placeholder="Ví dụ: 20,000,000"
-              value={formData.salaryMax ? formatCurrency(formData.salaryMax) : ""}
-              onChange={(e) => {
-                const value = parseCurrency(e.target.value);
-                setFormData({ ...formData, salaryMax: value });
-                if (errors.salaryMax) setErrors({ ...errors, salaryMax: "" });
-              }}
+            <Label htmlFor="jobTypeIds">Loại công việc</Label>
+            <MultiSelect
+              options={jobTypes.map((type) => ({
+                label: type.name,
+                value: type.id,
+              }))}
+              selected={formData.jobTypeIds || []}
+              onChange={(selected) =>
+                setFormData({ ...formData, jobTypeIds: selected })
+              }
+              placeholder="Chọn loại công việc"
               disabled={isSubmitting}
-              className={errors.salaryMax ? "border-destructive" : ""}
             />
-            {errors.salaryMax && (
-              <p className="text-sm text-destructive">{errors.salaryMax}</p>
-            )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="salaryCurrency">Đơn vị tiền tệ</Label>
-            <Select
-              value={formData.salaryCurrency || "VND"}
-              onValueChange={(value) =>
-                setFormData({ ...formData, salaryCurrency: value })
+            <Label htmlFor="productGroupIds">Nhóm sản phẩm</Label>
+            <MultiSelect
+              options={productGroups.map((group) => ({
+                label: group.name,
+                value: group.id,
+              }))}
+              selected={formData.productGroupIds || []}
+              onChange={(selected) =>
+                setFormData({ ...formData, productGroupIds: selected })
               }
+              placeholder="Chọn nhóm sản phẩm"
               disabled={isSubmitting}
-            >
-              <SelectTrigger id="salaryCurrency">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="VND">VND (Việt Nam Đồng)</SelectItem>
-                <SelectItem value="USD">USD (Đô la Mỹ)</SelectItem>
-              </SelectContent>
-            </Select>
+            />
           </div>
         </div>
       </div>
+
 
       {/* Requirements & Benefits */}
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="requirements">Yêu cầu công việc</Label>
-          <Textarea
-            id="requirements"
-            placeholder="Liệt kê các yêu cầu về kinh nghiệm, kỹ năng, bằng cấp..."
+          <MarkdownEditor
             value={formData.requirements || ""}
-            onChange={(e) =>
-              setFormData({ ...formData, requirements: e.target.value })
+            onChange={(value) =>
+              setFormData({ ...formData, requirements: value })
             }
+            placeholder="Liệt kê các yêu cầu về kinh nghiệm, kỹ năng, bằng cấp..."
             disabled={isSubmitting}
-            rows={6}
           />
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="benefits">Quyền lợi</Label>
-          <Textarea
-            id="benefits"
-            placeholder="Liệt kê các quyền lợi như bảo hiểm, phụ cấp, đào tạo..."
+          <MarkdownEditor
             value={formData.benefits || ""}
-            onChange={(e) =>
-              setFormData({ ...formData, benefits: e.target.value })
+            onChange={(value) =>
+              setFormData({ ...formData, benefits: value })
             }
+            placeholder="Liệt kê các quyền lợi như bảo hiểm, phụ cấp, đào tạo..."
             disabled={isSubmitting}
-            rows={6}
           />
         </div>
+      </div>
+
+      {/* Application Method */}
+      <div className="space-y-2">
+        <Label htmlFor="applicationMethod">Cách thức ứng tuyển</Label>
+        <Textarea
+          id="applicationMethod"
+          placeholder="Hướng dẫn cách ứng viên nộp hồ sơ, email, địa chỉ, form ứng tuyển..."
+          value={formData.applicationMethod || ""}
+          onChange={(e) =>
+            setFormData({ ...formData, applicationMethod: e.target.value })
+          }
+          disabled={isSubmitting}
+          rows={6}
+        />
       </div>
 
       {/* Deadline */}
