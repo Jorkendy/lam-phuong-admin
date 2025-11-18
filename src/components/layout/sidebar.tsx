@@ -8,6 +8,9 @@ import {
   LayoutDashboard,
   MapPin,
   Users,
+  Package,
+  Briefcase,
+  FolderKanban,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -31,6 +34,21 @@ const allNavItems: NavItem[] = [
     title: "Địa điểm",
     href: "/locations",
     icon: MapPin,
+  },
+  {
+    title: "Nhóm sản phẩm",
+    href: "/product-groups",
+    icon: Package,
+  },
+  {
+    title: "Danh mục công việc",
+    href: "/job-categories",
+    icon: Briefcase,
+  },
+  {
+    title: "Loại công việc",
+    href: "/job-types",
+    icon: FolderKanban,
   },
   {
     title: "Người dùng",
