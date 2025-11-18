@@ -4,8 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { FileText } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { CreateRecruitmentPostForm } from "./create-recruitment-post-form";
+import { RecruitmentPostPreview } from "./recruitment-post-preview";
 import type { Location } from "@/types/location";
 import type { JobCategory } from "@/types/job-category";
 import type { JobType } from "@/types/job-type";
@@ -27,6 +28,23 @@ export function CreateRecruitmentPostPageClient({
 }: CreateRecruitmentPostPageClientProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState<CreateRecruitmentPostRequest>({
+    title: "",
+    description: "",
+    introduce: "",
+    locationId: undefined,
+    jobCategoryIds: [],
+    jobTypeIds: [],
+    productGroupIds: [],
+    salaryMin: undefined,
+    salaryMax: undefined,
+    salaryCurrency: "VND",
+    requirements: "",
+    benefits: "",
+    applicationMethod: "",
+    deadline: "",
+    status: "draft",
+  });
 
   const handleSubmit = async (data: CreateRecruitmentPostRequest) => {
     setIsSubmitting(true);
@@ -65,14 +83,33 @@ export function CreateRecruitmentPostPageClient({
           </div>
         </CardHeader>
         <CardContent>
-          <CreateRecruitmentPostForm
-            locations={locations}
-            jobCategories={jobCategories}
-            jobTypes={jobTypes}
-            productGroups={productGroups}
-            onSubmit={handleSubmit}
-            isSubmitting={isSubmitting}
-          />
+          <Tabs defaultValue="edit" className="w-full">
+            <TabsList className="grid w-full max-w-md grid-cols-2">
+              <TabsTrigger value="edit">Chỉnh sửa</TabsTrigger>
+              <TabsTrigger value="preview">Xem trước</TabsTrigger>
+            </TabsList>
+            <TabsContent value="edit" className="mt-6">
+              <CreateRecruitmentPostForm
+                formData={formData}
+                onFormDataChange={setFormData}
+                locations={locations}
+                jobCategories={jobCategories}
+                jobTypes={jobTypes}
+                productGroups={productGroups}
+                onSubmit={handleSubmit}
+                isSubmitting={isSubmitting}
+              />
+            </TabsContent>
+            <TabsContent value="preview" className="mt-6">
+              <RecruitmentPostPreview
+                formData={formData}
+                locations={locations}
+                jobCategories={jobCategories}
+                jobTypes={jobTypes}
+                productGroups={productGroups}
+              />
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
     </div>

@@ -22,6 +22,8 @@ import type { ProductGroup } from "@/types/product-group";
 import type { CreateRecruitmentPostRequest } from "@/types/recruitment-post";
 
 interface CreateRecruitmentPostFormProps {
+  formData: CreateRecruitmentPostRequest;
+  onFormDataChange: (data: CreateRecruitmentPostRequest) => void;
   locations: Location[];
   jobCategories: JobCategory[];
   jobTypes: JobType[];
@@ -31,6 +33,8 @@ interface CreateRecruitmentPostFormProps {
 }
 
 export function CreateRecruitmentPostForm({
+  formData,
+  onFormDataChange,
   locations,
   jobCategories,
   jobTypes,
@@ -38,24 +42,6 @@ export function CreateRecruitmentPostForm({
   onSubmit,
   isSubmitting,
 }: CreateRecruitmentPostFormProps) {
-  const [formData, setFormData] = useState<CreateRecruitmentPostRequest>({
-    title: "",
-    description: "",
-    introduce: "",
-    locationId: undefined,
-    jobCategoryIds: [],
-    jobTypeIds: [],
-    productGroupIds: [],
-    salaryMin: undefined,
-    salaryMax: undefined,
-    salaryCurrency: "VND",
-    requirements: "",
-    benefits: "",
-    applicationMethod: "",
-    deadline: "",
-    status: "draft",
-  });
-
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const validateForm = (): boolean => {
@@ -114,7 +100,7 @@ export function CreateRecruitmentPostForm({
               placeholder="Ví dụ: Tuyển dụng Nhân viên Kinh doanh"
               value={formData.title}
               onChange={(e) => {
-                setFormData({ ...formData, title: e.target.value });
+                onFormDataChange({ ...formData, title: e.target.value });
                 if (errors.title) setErrors({ ...errors, title: "" });
               }}
               disabled={isSubmitting}
@@ -130,7 +116,7 @@ export function CreateRecruitmentPostForm({
             <Select
               value={formData.status}
               onValueChange={(value: "draft" | "published" | "closed") =>
-                setFormData({ ...formData, status: value })
+                onFormDataChange({ ...formData, status: value })
               }
               disabled={isSubmitting}
             >
@@ -153,7 +139,7 @@ export function CreateRecruitmentPostForm({
             placeholder="Giới thiệu về công ty, môi trường làm việc, văn hóa công ty..."
             value={formData.introduce || ""}
             onChange={(e) =>
-              setFormData({ ...formData, introduce: e.target.value })
+              onFormDataChange({ ...formData, introduce: e.target.value })
             }
             disabled={isSubmitting}
             rows={4}
@@ -168,7 +154,7 @@ export function CreateRecruitmentPostForm({
             <MarkdownEditor
               value={formData.description}
               onChange={(value) => {
-                setFormData({ ...formData, description: value });
+                onFormDataChange({ ...formData, description: value });
                 if (errors.description) setErrors({ ...errors, description: "" });
               }}
               placeholder="Mô tả chi tiết về công việc, trách nhiệm, yêu cầu..."
@@ -190,9 +176,9 @@ export function CreateRecruitmentPostForm({
             <Label htmlFor="locationId">Địa điểm</Label>
             <Select
               value={formData.locationId || undefined}
-              onValueChange={(value) =>
-                setFormData({ ...formData, locationId: value || undefined })
-              }
+                  onValueChange={(value) =>
+                    onFormDataChange({ ...formData, locationId: value || undefined })
+                  }
               disabled={isSubmitting}
             >
               <SelectTrigger id="locationId">
@@ -217,7 +203,7 @@ export function CreateRecruitmentPostForm({
               }))}
               selected={formData.jobCategoryIds || []}
               onChange={(selected) =>
-                setFormData({ ...formData, jobCategoryIds: selected })
+                onFormDataChange({ ...formData, jobCategoryIds: selected })
               }
               placeholder="Chọn danh mục"
               disabled={isSubmitting}
@@ -233,7 +219,7 @@ export function CreateRecruitmentPostForm({
               }))}
               selected={formData.jobTypeIds || []}
               onChange={(selected) =>
-                setFormData({ ...formData, jobTypeIds: selected })
+                onFormDataChange({ ...formData, jobTypeIds: selected })
               }
               placeholder="Chọn loại công việc"
               disabled={isSubmitting}
@@ -249,7 +235,7 @@ export function CreateRecruitmentPostForm({
               }))}
               selected={formData.productGroupIds || []}
               onChange={(selected) =>
-                setFormData({ ...formData, productGroupIds: selected })
+                onFormDataChange({ ...formData, productGroupIds: selected })
               }
               placeholder="Chọn nhóm sản phẩm"
               disabled={isSubmitting}
@@ -266,7 +252,7 @@ export function CreateRecruitmentPostForm({
           <MarkdownEditor
             value={formData.requirements || ""}
             onChange={(value) =>
-              setFormData({ ...formData, requirements: value })
+              onFormDataChange({ ...formData, requirements: value })
             }
             placeholder="Liệt kê các yêu cầu về kinh nghiệm, kỹ năng, bằng cấp..."
             disabled={isSubmitting}
@@ -278,7 +264,7 @@ export function CreateRecruitmentPostForm({
           <MarkdownEditor
             value={formData.benefits || ""}
             onChange={(value) =>
-              setFormData({ ...formData, benefits: value })
+              onFormDataChange({ ...formData, benefits: value })
             }
             placeholder="Liệt kê các quyền lợi như bảo hiểm, phụ cấp, đào tạo..."
             disabled={isSubmitting}
@@ -293,9 +279,9 @@ export function CreateRecruitmentPostForm({
           id="applicationMethod"
           placeholder="Hướng dẫn cách ứng viên nộp hồ sơ, email, địa chỉ, form ứng tuyển..."
           value={formData.applicationMethod || ""}
-          onChange={(e) =>
-            setFormData({ ...formData, applicationMethod: e.target.value })
-          }
+            onChange={(e) =>
+              onFormDataChange({ ...formData, applicationMethod: e.target.value })
+            }
           disabled={isSubmitting}
           rows={6}
         />
@@ -309,7 +295,7 @@ export function CreateRecruitmentPostForm({
           type="date"
           value={formData.deadline || ""}
           onChange={(e) =>
-            setFormData({ ...formData, deadline: e.target.value })
+            onFormDataChange({ ...formData, deadline: e.target.value })
           }
           disabled={isSubmitting}
           min={new Date().toISOString().split("T")[0]}
