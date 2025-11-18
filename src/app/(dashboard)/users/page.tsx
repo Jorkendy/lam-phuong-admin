@@ -36,6 +36,6 @@ export default async function UsersPage() {
     // Continue with empty array on error
   }
 
-  return <UsersPageClient initialUsers={users} />;
+  return <UsersPageClient initialUsers={users} currentUser={user} />;
 }
 

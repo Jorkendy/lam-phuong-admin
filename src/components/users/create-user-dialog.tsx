@@ -22,15 +22,17 @@ import {
 } from "@/components/ui/select";
 import { createUser } from "@/lib/users";
 import type { User } from "@/types/auth";
+import { useMemo, useEffect } from "react";
 
 interface CreateUserDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onUserCreated: (user: User) => void;
+  currentUserRole?: string;
 }
 
 const DEFAULT_PASSWORD = "123456";
-const ROLE_OPTIONS = [
+const ALL_ROLE_OPTIONS = [
   { value: "Super Admin", label: "Super Admin" },
   { value: "Admin", label: "Admin" },
   { value: "User", label: "User" },
@@ -40,9 +42,35 @@ export function CreateUserDialog({
   open,
   onOpenChange,
   onUserCreated,
+  currentUserRole,
 }: CreateUserDialogProps) {
+  // Filter role options: Only Super Admin can invite Super Admin
+  const roleOptions = useMemo(() => {
+    if (currentUserRole === "Super Admin") {
+      return ALL_ROLE_OPTIONS;
+    }
+    // Admin and other roles cannot invite Super Admin
+    return ALL_ROLE_OPTIONS.filter((option) => option.value !== "Super Admin");
+  }, [currentUserRole]);
+  
   const [email, setEmail] = useState("");
+  // Initialize role with first available option
   const [role, setRole] = useState<string>("User");
+
+  // Reset role to valid option when dialog opens or roleOptions change
+  useEffect(() => {
+    if (open) {
+      // If current role is not in available options, reset to first available
+      const isValidRole = roleOptions.some((option) => option.value === role);
+      if (!isValidRole && roleOptions.length > 0) {
+        // Defer state update to avoid synchronous setState
+        const timer = setTimeout(() => {
+          setRole(roleOptions[0].value);
+        }, 0);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [open, roleOptions, role]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [emailError, setEmailError] = useState<string | null>(null);
@@ -100,7 +128,8 @@ export function CreateUserDialog({
       // Close dialog after showing success message for 5 seconds
       setTimeout(() => {
         setEmail("");
-        setRole("User");
+        // Reset to first available role option
+        setRole(roleOptions[0]?.value || "User");
         setSuccess(false);
         setCreatedEmail("");
         onOpenChange(false);
@@ -121,7 +150,8 @@ export function CreateUserDialog({
     
     if (!newOpen && !isLoading && !success) {
       setEmail("");
-      setRole("User");
+      // Reset to first available role option
+      setRole(roleOptions[0]?.value || "User");
       setError(null);
       setEmailError(null);
       setSuccess(false);
@@ -175,7 +205,8 @@ export function CreateUserDialog({
                 type="button"
                 onClick={() => {
                   setEmail("");
-                  setRole("User");
+                  // Reset to first available role option
+                  setRole(roleOptions[0]?.value || "User");
                   setSuccess(false);
                   setCreatedEmail("");
                   onOpenChange(false);
@@ -214,7 +245,7 @@ export function CreateUserDialog({
                   <SelectValue placeholder="Chọn vai trò" />
                 </SelectTrigger>
                 <SelectContent>
-                  {ROLE_OPTIONS.map((option) => (
+                  {roleOptions.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
                     </SelectItem>

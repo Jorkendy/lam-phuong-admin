@@ -19,9 +19,10 @@ import type { User } from "@/types/auth";
 
 interface UsersPageClientProps {
   initialUsers: User[];
+  currentUser: User | null;
 }
 
-export function UsersPageClient({ initialUsers }: UsersPageClientProps) {
+export function UsersPageClient({ initialUsers, currentUser }: UsersPageClientProps) {
   const router = useRouter();
   const [users, setUsers] = useState<User[]>(initialUsers);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -176,6 +177,7 @@ export function UsersPageClient({ initialUsers }: UsersPageClientProps) {
         open={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}
         onUserCreated={handleUserCreated}
+        currentUserRole={currentUser?.role}
       />
     </div>
   );
