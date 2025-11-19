@@ -3,13 +3,16 @@ import { AppLayout } from '@/components/AppLayout'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { LocationFormDialog } from '@/components/LocationFormDialog'
-import { getLocations, createLocation, type LocationFields, type AirtableRecord } from '@/lib/airtable-api'
+import { getLocations, createLocation, deleteLocation, deleteLocations, type LocationFields, type AirtableRecord } from '@/lib/airtable-api'
 
 export function LocationsPage() {
   const [locations, setLocations] = useState<AirtableRecord<LocationFields>[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; ids: string[] }>({ open: false, ids: [] })
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     loadLocations()
@@ -35,6 +38,60 @@ export function LocationsPage() {
     await loadLocations()
   }
 
+  const handleToggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(id)) {
+        newSet.delete(id)
+      } else {
+        newSet.add(id)
+      }
+      return newSet
+    })
+  }
+
+  const handleSelectAll = () => {
+    if (selectedIds.size === locations.length) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(locations.map(l => l.id)))
+    }
+  }
+
+  const handleDeleteClick = (ids: string[]) => {
+    setDeleteConfirm({ open: true, ids })
+  }
+
+  const handleDeleteConfirm = async () => {
+    const idsToDelete = deleteConfirm.ids
+    if (idsToDelete.length === 0) return
+
+    try {
+      setDeleting(true)
+      setError(null)
+      
+      if (idsToDelete.length === 1) {
+        await deleteLocation(idsToDelete[0])
+      } else {
+        await deleteLocations(idsToDelete)
+      }
+      
+      // Clear selection and reload
+      setSelectedIds(new Set())
+      setDeleteConfirm({ open: false, ids: [] })
+      await loadLocations()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete location(s)')
+      setDeleteConfirm({ open: false, ids: [] })
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  const handleDeleteCancel = () => {
+    setDeleteConfirm({ open: false, ids: [] })
+  }
+
   return (
     <AppLayout>
       <div className="min-h-full bg-background">
@@ -47,28 +104,56 @@ export function LocationsPage() {
                   Manage your location database
                 </p>
               </div>
-              <Button 
-                onClick={() => setIsDialogOpen(true)}
-                size="lg"
-                className="shadow-md hover:shadow-lg transition-shadow"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="mr-2"
+              <div className="flex items-center gap-3">
+                {selectedIds.size > 0 && (
+                  <Button 
+                    onClick={() => handleDeleteClick(Array.from(selectedIds))}
+                    variant="destructive"
+                    size="lg"
+                    className="shadow-md hover:shadow-lg transition-shadow"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="mr-2"
+                    >
+                      <path d="M3 6h18" />
+                      <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                      <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                    </svg>
+                    Delete ({selectedIds.size})
+                  </Button>
+                )}
+                <Button 
+                  onClick={() => setIsDialogOpen(true)}
+                  size="lg"
+                  className="shadow-md hover:shadow-lg transition-shadow"
                 >
-                  <path d="M5 12h14" />
-                  <path d="M12 5v14" />
-                </svg>
-                Create Location
-              </Button>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="mr-2"
+                  >
+                    <path d="M5 12h14" />
+                    <path d="M12 5v14" />
+                  </svg>
+                  Create Location
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -173,40 +258,92 @@ export function LocationsPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {locations.map((location) => (
-              <Card 
-                key={location.id}
-                className="group hover:shadow-lg transition-all duration-200 hover:border-primary/50 cursor-pointer"
-              >
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
+          <>
+            {locations.length > 0 && (
+              <div className="mb-4 flex items-center gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.size === locations.length && locations.length > 0}
+                    onChange={handleSelectAll}
+                    className="w-4 h-4 rounded border-input text-primary focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  />
+                  <span className="text-sm text-muted-foreground">
+                    Select all ({selectedIds.size} selected)
+                  </span>
+                </label>
+              </div>
+            )}
+            <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {locations.map((location) => (
+                <Card 
+                  key={location.id}
+                  className={`group hover:shadow-lg transition-all duration-200 ${
+                    selectedIds.has(location.id) 
+                      ? 'border-primary border-2' 
+                      : 'hover:border-primary/50'
+                  }`}
+                >
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(location.id)}
+                          onChange={() => handleToggleSelect(location.id)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-4 h-4 rounded border-input text-primary focus:ring-2 focus:ring-ring focus:ring-offset-2 flex-shrink-0 mt-1"
+                        />
+                        <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors flex-shrink-0">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="text-primary"
+                          >
+                            <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                            <circle cx="12" cy="10" r="3" />
+                          </svg>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <CardTitle className="text-lg font-semibold truncate">
+                            {location.fields.Name || 'Unnamed Location'}
+                          </CardTitle>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDeleteClick([location.id])
+                        }}
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 flex-shrink-0"
+                      >
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
-                          width="20"
-                          height="20"
+                          width="16"
+                          height="16"
                           viewBox="0 0 24 24"
                           fill="none"
                           stroke="currentColor"
                           strokeWidth="2"
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          className="text-primary"
                         >
-                          <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
-                          <circle cx="12" cy="10" r="3" />
+                          <path d="M3 6h18" />
+                          <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                          <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
                         </svg>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <CardTitle className="text-lg font-semibold truncate">
-                          {location.fields.Name || 'Unnamed Location'}
-                        </CardTitle>
-                      </div>
+                      </Button>
                     </div>
-                  </div>
-                </CardHeader>
+                  </CardHeader>
                 <CardContent className="pt-0">
                   {location.fields.Address && (
                     <div className="flex items-start gap-2 mb-2">
@@ -263,6 +400,7 @@ export function LocationsPage() {
               </Card>
             ))}
           </div>
+          </>
         )}
         </div>
       </div>
@@ -271,6 +409,91 @@ export function LocationsPage() {
         onClose={() => setIsDialogOpen(false)}
         onSubmit={handleCreateLocation}
       />
+      
+      {/* Delete Confirmation Dialog */}
+      {deleteConfirm.open && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in-0 duration-200"
+          onClick={handleDeleteCancel}
+        >
+          {/* Backdrop with blur - adapts to theme */}
+          <div className="absolute inset-0 bg-black/60 dark:bg-black/70 backdrop-blur-sm animate-in fade-in-0 duration-200" />
+          
+        {/* Dialog Container */}
+          <div 
+            className="relative w-full max-w-md bg-white dark:bg-card rounded-lg shadow-2xl border-2 border-border overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-2 duration-200 text-foreground"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header Section */}
+            <div className="px-6 pt-6 pb-5">
+              <div className="flex items-start gap-3">
+                <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-destructive/20 dark:bg-destructive/20 flex-shrink-0 mt-0.5">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-destructive"
+                  >
+                    <path d="M3 6h18" />
+                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-lg font-bold text-foreground dark:text-foreground leading-tight">
+                    Delete Location{deleteConfirm.ids.length > 1 ? 's' : ''}?
+                  </h2>
+                  <p className="text-sm text-foreground/80 dark:text-foreground mt-1 leading-relaxed">
+                    {deleteConfirm.ids.length === 1
+                      ? 'This action cannot be undone. The location will be permanently deleted.'
+                      : `Are you sure you want to delete ${deleteConfirm.ids.length} locations? This action cannot be undone.`}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Separator */}
+            <div className="border-t-2 border-border my-5" />
+
+            {/* Action Buttons */}
+            <div className="px-6 pb-6">
+              <div className="flex items-center justify-end gap-3">
+                <Button 
+                  type="button" 
+                  variant="ghost"
+                  onClick={handleDeleteCancel} 
+                  disabled={deleting}
+                  className="px-5 h-9 font-medium text-foreground/90 hover:text-foreground hover:bg-muted/60 dark:hover:bg-muted/30 transition-colors"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="destructive"
+                  onClick={handleDeleteConfirm}
+                  disabled={deleting}
+                  className="px-5 h-9 font-semibold bg-destructive text-destructive-foreground hover:bg-destructive/90 dark:hover:bg-destructive/90 shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md"
+                >
+                  {deleting ? (
+                    <span className="flex items-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent"></div>
+                      <span>Deleting...</span>
+                    </span>
+                  ) : (
+                    'Delete'
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </AppLayout>
   )
 }

@@ -154,3 +154,71 @@ export async function createLocation(fields: LocationFields): Promise<AirtableRe
   return data.records[0]
 }
 
+/**
+ * Delete a single location from Airtable
+ */
+export async function deleteLocation(recordId: string): Promise<void> {
+  const accessToken = await getValidAccessToken()
+  if (!accessToken) {
+    throw new Error('No valid access token. Please log in again.')
+  }
+
+  const baseId = getAirtableBaseId()
+  const tableName = getLocationsTableName()
+  const url = `${AIRTABLE_API_BASE_URL}/${baseId}/${encodeURIComponent(tableName)}/${recordId}`
+
+  const response = await fetch(url, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+
+  if (!response.ok) {
+    const error = await response.text()
+    throw new Error(`Failed to delete location: ${error}`)
+  }
+}
+
+/**
+ * Delete multiple locations from Airtable
+ * Note: Airtable API allows deleting up to 10 records per request
+ */
+export async function deleteLocations(recordIds: string[]): Promise<void> {
+  if (recordIds.length === 0) {
+    return
+  }
+
+  const accessToken = await getValidAccessToken()
+  if (!accessToken) {
+    throw new Error('No valid access token. Please log in again.')
+  }
+
+  const baseId = getAirtableBaseId()
+  const tableName = getLocationsTableName()
+  const MAX_RECORDS_PER_REQUEST = 10
+  
+  // Split into chunks of 10 (Airtable's limit)
+  for (let i = 0; i < recordIds.length; i += MAX_RECORDS_PER_REQUEST) {
+    const chunk = recordIds.slice(i, i + MAX_RECORDS_PER_REQUEST)
+    const url = new URL(`${AIRTABLE_API_BASE_URL}/${baseId}/${encodeURIComponent(tableName)}`)
+    
+    // Add record IDs as query parameters
+    chunk.forEach(id => {
+      url.searchParams.append('records[]', id)
+    })
+
+    const response = await fetch(url.toString(), {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    })
+
+    if (!response.ok) {
+      const error = await response.text()
+      throw new Error(`Failed to delete locations: ${error}`)
+    }
+  }
+}
+
