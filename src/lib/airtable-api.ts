@@ -3,6 +3,7 @@
  */
 
 import { getValidAccessToken } from './airtable-oauth'
+import slugify from 'slugify'
 
 const AIRTABLE_API_BASE_URL = 'https://api.airtable.com/v0'
 
@@ -53,6 +54,7 @@ export interface AirtableResponse<T = Record<string, any>> {
  */
 export interface LocationFields {
   Name?: string
+  Slug?: string
   Status?: string
   [key: string]: any
 }
@@ -127,6 +129,61 @@ export async function getLocations(options?: {
 }): Promise<AirtableResponse<LocationFields>> {
   const tableName = getLocationsTableName()
   return fetchAirtableRecords<LocationFields>(tableName, options)
+}
+
+/**
+ * Check if a slug exists in Airtable
+ */
+export async function checkSlugExists(slug: string): Promise<boolean> {
+  try {
+    const tableName = getLocationsTableName()
+    // Escape single quotes in slug for Airtable formula
+    const escapedSlug = slug.replace(/'/g, "''")
+    const filterFormula = `{Slug} = '${escapedSlug}'`
+    
+    const response = await getLocations({
+      filterByFormula: filterFormula,
+      maxRecords: 1,
+    })
+    
+    return response.records.length > 0
+  } catch (err) {
+    console.error('Error checking slug existence:', err)
+    // If there's an error checking, assume it doesn't exist to allow creation
+    return false
+  }
+}
+
+/**
+ * Generate a unique slug by checking Airtable and appending suffix if needed
+ */
+export async function generateUniqueSlug(name: string): Promise<string> {
+  const baseSlug = slugify(name.trim(), {
+    lower: true,
+    strict: true,
+  })
+
+  // Check if base slug exists
+  const baseExists = await checkSlugExists(baseSlug)
+  if (!baseExists) {
+    return baseSlug
+  }
+
+  // Try with suffix starting from 2
+  let counter = 2
+  let uniqueSlug = `${baseSlug}-${counter}`
+  
+  while (await checkSlugExists(uniqueSlug)) {
+    counter++
+    uniqueSlug = `${baseSlug}-${counter}`
+    
+    // Safety limit to prevent infinite loops
+    if (counter > 1000) {
+      throw new Error('Unable to generate unique slug after many attempts')
+    }
+  }
+
+  return uniqueSlug
 }
 
 /**
