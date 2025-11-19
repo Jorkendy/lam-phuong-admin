@@ -138,7 +138,7 @@ export function LocationsPage() {
                     onClick={() => handleDeleteClick(Array.from(selectedIds))}
                     variant="destructive"
                     size="lg"
-                    className="shadow-md hover:shadow-lg transition-shadow"
+                    className="shadow-md hover:shadow-lg transition-all duration-200"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -162,7 +162,7 @@ export function LocationsPage() {
                 <Button 
                   onClick={() => setIsDialogOpen(true)}
                   size="lg"
-                  className="shadow-md hover:shadow-lg transition-shadow"
+                  className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 font-semibold"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -171,7 +171,7 @@ export function LocationsPage() {
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
-                    strokeWidth="2"
+                    strokeWidth="2.5"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     className="mr-2"
@@ -294,7 +294,7 @@ export function LocationsPage() {
                     type="checkbox"
                     checked={selectedIds.size === locations.length && locations.length > 0}
                     onChange={handleSelectAll}
-                    className="w-4 h-4 rounded border-input text-primary focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    className="w-5 h-5 rounded-md transition-all duration-200 cursor-pointer"
                   />
                   <span className="text-sm text-muted-foreground">
                     Select all ({selectedIds.size} selected)
@@ -302,28 +302,28 @@ export function LocationsPage() {
                 </label>
               </div>
             )}
-            <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid gap-6 sm:gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {locations.map((location) => (
                 <Card 
                   key={location.id}
-                  className={`group hover:shadow-lg transition-all duration-200 ${
+                  className={`group relative overflow-hidden rounded-xl border transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-xl ${
                     selectedIds.has(location.id) 
-                      ? 'border-primary border-2' 
-                      : 'hover:border-primary/50'
+                      ? 'border-primary border-2 shadow-lg' 
+                      : 'border-border shadow-sm hover:border-primary/30'
                   }`}
                 >
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start gap-2">
+                  <CardHeader className="pb-4 pt-6 px-6">
+                    <div className="flex items-start gap-3">
                       <input
                         type="checkbox"
                         checked={selectedIds.has(location.id)}
                         onChange={() => handleToggleSelect(location.id)}
                         onClick={(e) => e.stopPropagation()}
-                        className="w-4 h-4 rounded border-input text-primary focus:ring-2 focus:ring-ring focus:ring-offset-2 flex-shrink-0 mt-1"
+                        className="w-5 h-5 rounded-md flex-shrink-0 mt-1 transition-all duration-200 cursor-pointer"
                       />
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-start gap-2 mb-2">
-                          <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors flex-shrink-0">
+                        <div className="flex items-start gap-3 mb-3">
+                          <div className="p-2.5 rounded-xl bg-blue-100 group-hover:bg-blue-200 transition-all duration-200 flex-shrink-0 shadow-sm">
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
                               width="20"
@@ -334,14 +334,14 @@ export function LocationsPage() {
                               strokeWidth="2"
                               strokeLinecap="round"
                               strokeLinejoin="round"
-                              className="text-primary"
+                              className="text-blue-600"
                             >
                               <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
                               <circle cx="12" cy="10" r="3" />
                             </svg>
                           </div>
                           <div className="flex-1 min-w-0">
-                            <CardTitle className="text-lg font-semibold break-words leading-tight">
+                            <CardTitle className="text-lg font-semibold break-words leading-tight text-foreground">
                               {location.fields.Name || 'Unnamed Location'}
                             </CardTitle>
                           </div>
@@ -352,7 +352,7 @@ export function LocationsPage() {
                               e.stopPropagation()
                               handleDeleteClick([location.id])
                             }}
-                            className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 flex-shrink-0"
+                            className="h-8 w-8 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive hover:bg-destructive/10 flex-shrink-0 transition-all duration-200 rounded-lg"
                           >
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
@@ -374,8 +374,8 @@ export function LocationsPage() {
                       </div>
                     </div>
                   </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="flex items-center justify-between mb-3 pt-3 border-t border-border">
+                <CardContent className="pt-0 px-6 pb-6">
+                  <div className="flex items-center justify-between mb-4 pt-4 border-t border-border">
                     <div className="flex items-center gap-3">
                       <span className="text-xs text-muted-foreground font-medium">Status:</span>
                       <button
@@ -406,7 +406,7 @@ export function LocationsPage() {
                       </span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 text-muted-foreground">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       width="12"
@@ -417,12 +417,11 @@ export function LocationsPage() {
                       strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      className="text-muted-foreground"
                     >
                       <circle cx="12" cy="12" r="10" />
                       <polyline points="12 6 12 12 16 14" />
                     </svg>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs">
                       Created {new Date(location.createdTime).toLocaleDateString('en-US', { 
                         month: 'short', 
                         day: 'numeric', 
