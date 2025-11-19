@@ -4,6 +4,7 @@ import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { LoginPage } from '@/pages/LoginPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { LocationsPage } from '@/pages/LocationsPage'
+import { ProductGroupsPage } from '@/pages/ProductGroupsPage'
 import { OAuthCallbackPage } from '@/pages/OAuthCallbackPage'
 
 function App() {
@@ -26,6 +27,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <LocationsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/product-groups"
+            element={
+              <ProtectedRoute>
+                <ProductGroupsPage />
               </ProtectedRoute>
             }
           />

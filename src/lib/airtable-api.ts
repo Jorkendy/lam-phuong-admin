@@ -25,6 +25,13 @@ function getLocationsTableName(): string {
 }
 
 /**
+ * Get product groups table name from environment variables or use default
+ */
+function getProductGroupsTableName(): string {
+  return import.meta.env.VITE_AIRTABLE_PRODUCT_GROUPS_TABLE || 'Product Groups'
+}
+
+/**
  * Airtable record interface
  */
 export interface AirtableRecord<T = Record<string, any>> {
@@ -51,6 +58,15 @@ export interface LocationFields {
   Country?: string
   Latitude?: number
   Longitude?: number
+  [key: string]: any
+}
+
+/**
+ * Product Group fields interface
+ */
+export interface ProductGroupFields {
+  Name?: string
+  Slug?: string
   [key: string]: any
 }
 
@@ -218,6 +234,124 @@ export async function deleteLocations(recordIds: string[]): Promise<void> {
     if (!response.ok) {
       const error = await response.text()
       throw new Error(`Failed to delete locations: ${error}`)
+    }
+  }
+}
+
+/**
+ * Fetch all product groups from Airtable
+ */
+export async function getProductGroups(options?: {
+  maxRecords?: number
+  view?: string
+  filterByFormula?: string
+  sort?: Array<{ field: string; direction: 'asc' | 'desc' }>
+}): Promise<AirtableResponse<ProductGroupFields>> {
+  const tableName = getProductGroupsTableName()
+  return fetchAirtableRecords<ProductGroupFields>(tableName, options)
+}
+
+/**
+ * Create a new product group in Airtable
+ */
+export async function createProductGroup(fields: ProductGroupFields): Promise<AirtableRecord<ProductGroupFields>> {
+  const accessToken = await getValidAccessToken()
+  if (!accessToken) {
+    throw new Error('No valid access token. Please log in again.')
+  }
+
+  const baseId = getAirtableBaseId()
+  const tableName = getProductGroupsTableName()
+  const url = `${AIRTABLE_API_BASE_URL}/${baseId}/${encodeURIComponent(tableName)}`
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      records: [
+        {
+          fields: fields,
+        },
+      ],
+    }),
+  })
+
+  if (!response.ok) {
+    const error = await response.text()
+    throw new Error(`Failed to create product group: ${error}`)
+  }
+
+  const data = await response.json()
+  return data.records[0]
+}
+
+/**
+ * Delete a single product group from Airtable
+ */
+export async function deleteProductGroup(recordId: string): Promise<void> {
+  const accessToken = await getValidAccessToken()
+  if (!accessToken) {
+    throw new Error('No valid access token. Please log in again.')
+  }
+
+  const baseId = getAirtableBaseId()
+  const tableName = getProductGroupsTableName()
+  const url = `${AIRTABLE_API_BASE_URL}/${baseId}/${encodeURIComponent(tableName)}/${recordId}`
+
+  const response = await fetch(url, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+
+  if (!response.ok) {
+    const error = await response.text()
+    throw new Error(`Failed to delete product group: ${error}`)
+  }
+}
+
+/**
+ * Delete multiple product groups from Airtable
+ * Note: Airtable API allows deleting up to 10 records per request
+ */
+export async function deleteProductGroups(recordIds: string[]): Promise<void> {
+  if (recordIds.length === 0) {
+    return
+  }
+
+  const accessToken = await getValidAccessToken()
+  if (!accessToken) {
+    throw new Error('No valid access token. Please log in again.')
+  }
+
+  const baseId = getAirtableBaseId()
+  const tableName = getProductGroupsTableName()
+  const MAX_RECORDS_PER_REQUEST = 10
+  
+  // Split into chunks of 10 (Airtable's limit)
+  for (let i = 0; i < recordIds.length; i += MAX_RECORDS_PER_REQUEST) {
+    const chunk = recordIds.slice(i, i + MAX_RECORDS_PER_REQUEST)
+    const url = new URL(`${AIRTABLE_API_BASE_URL}/${baseId}/${encodeURIComponent(tableName)}`)
+    
+    // Add record IDs as query parameters
+    chunk.forEach(id => {
+      url.searchParams.append('records[]', id)
+    })
+
+    const response = await fetch(url.toString(), {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    })
+
+    if (!response.ok) {
+      const error = await response.text()
+      throw new Error(`Failed to delete product groups: ${error}`)
     }
   }
 }
