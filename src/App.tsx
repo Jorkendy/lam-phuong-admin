@@ -5,6 +5,8 @@ import { LoginPage } from '@/pages/LoginPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { LocationsPage } from '@/pages/LocationsPage'
 import { ProductGroupsPage } from '@/pages/ProductGroupsPage'
+import { JobCategoriesPage } from '@/pages/JobCategoriesPage'
+import { JobTypesPage } from '@/pages/JobTypesPage'
 import { OAuthCallbackPage } from '@/pages/OAuthCallbackPage'
 
 function App() {
@@ -35,6 +37,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <ProductGroupsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/job-categories"
+            element={
+              <ProtectedRoute>
+                <JobCategoriesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/job-types"
+            element={
+              <ProtectedRoute>
+                <JobTypesPage />
               </ProtectedRoute>
             }
           />

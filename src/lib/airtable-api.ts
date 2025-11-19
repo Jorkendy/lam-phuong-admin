@@ -33,6 +33,20 @@ function getProductGroupsTableName(): string {
 }
 
 /**
+ * Get job categories table name from environment variables or use default
+ */
+function getJobCategoriesTableName(): string {
+  return import.meta.env.VITE_AIRTABLE_JOB_CATEGORIES_TABLE || 'Job Categories'
+}
+
+/**
+ * Get job types table name from environment variables or use default
+ */
+function getJobTypesTableName(): string {
+  return import.meta.env.VITE_AIRTABLE_JOB_TYPES_TABLE || 'Job Types'
+}
+
+/**
  * Airtable record interface
  */
 export interface AirtableRecord<T = Record<string, any>> {
@@ -63,6 +77,26 @@ export interface LocationFields {
  * Product Group fields interface
  */
 export interface ProductGroupFields {
+  Name?: string
+  Slug?: string
+  Status?: string
+  [key: string]: any
+}
+
+/**
+ * Job Category fields interface
+ */
+export interface JobCategoryFields {
+  Name?: string
+  Slug?: string
+  Status?: string
+  [key: string]: any
+}
+
+/**
+ * Job Type fields interface
+ */
+export interface JobTypeFields {
   Name?: string
   Slug?: string
   Status?: string
@@ -531,3 +565,415 @@ export async function generateUniqueProductGroupSlug(name: string): Promise<stri
   return uniqueSlug
 }
 
+
+/**
+ * Fetch all job categories from Airtable
+ */
+export async function getJobCategories(options?: {
+  maxRecords?: number
+  view?: string
+  filterByFormula?: string
+  sort?: Array<{ field: string; direction: 'asc' | 'desc' }>
+}): Promise<AirtableResponse<JobCategoryFields>> {
+  const tableName = getJobCategoriesTableName()
+  return fetchAirtableRecords<JobCategoryFields>(tableName, options)
+}
+
+/**
+ * Create a new job category in Airtable
+ */
+export async function createJobCategory(fields: JobCategoryFields): Promise<AirtableRecord<JobCategoryFields>> {
+  const accessToken = await getValidAccessToken()
+  if (!accessToken) {
+    throw new Error('No valid access token. Please log in again.')
+  }
+
+  const baseId = getAirtableBaseId()
+  const tableName = getJobCategoriesTableName()
+  const url = `${AIRTABLE_API_BASE_URL}/${baseId}/${encodeURIComponent(tableName)}`
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      records: [
+        {
+          fields: fields,
+        },
+      ],
+    }),
+  })
+
+  if (!response.ok) {
+    const error = await response.text()
+    throw new Error(`Failed to create job category: ${error}`)
+  }
+
+  const data = await response.json()
+  return data.records[0]
+}
+
+/**
+ * Update a job category in Airtable
+ */
+export async function updateJobCategory(recordId: string, fields: Partial<JobCategoryFields>): Promise<AirtableRecord<JobCategoryFields>> {
+  const accessToken = await getValidAccessToken()
+  if (!accessToken) {
+    throw new Error('No valid access token. Please log in again.')
+  }
+
+  const baseId = getAirtableBaseId()
+  const tableName = getJobCategoriesTableName()
+  const url = `${AIRTABLE_API_BASE_URL}/${baseId}/${encodeURIComponent(tableName)}/${recordId}`
+
+  const response = await fetch(url, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      fields: fields,
+    }),
+  })
+
+  if (!response.ok) {
+    const error = await response.text()
+    throw new Error(`Failed to update job category: ${error}`)
+  }
+
+  const data = await response.json()
+  return data
+}
+
+/**
+ * Delete a single job category from Airtable
+ */
+export async function deleteJobCategory(recordId: string): Promise<void> {
+  const accessToken = await getValidAccessToken()
+  if (!accessToken) {
+    throw new Error('No valid access token. Please log in again.')
+  }
+
+  const baseId = getAirtableBaseId()
+  const tableName = getJobCategoriesTableName()
+  const url = `${AIRTABLE_API_BASE_URL}/${baseId}/${encodeURIComponent(tableName)}/${recordId}`
+
+  const response = await fetch(url, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+
+  if (!response.ok) {
+    const error = await response.text()
+    throw new Error(`Failed to delete job category: ${error}`)
+  }
+}
+
+/**
+ * Delete multiple job categories from Airtable
+ * Note: Airtable API allows deleting up to 10 records per request
+ */
+export async function deleteJobCategories(recordIds: string[]): Promise<void> {
+  if (recordIds.length === 0) {
+    return
+  }
+
+  const accessToken = await getValidAccessToken()
+  if (!accessToken) {
+    throw new Error('No valid access token. Please log in again.')
+  }
+
+  const baseId = getAirtableBaseId()
+  const tableName = getJobCategoriesTableName()
+  const MAX_RECORDS_PER_REQUEST = 10
+  
+  // Split into chunks of 10 (Airtable's limit)
+  for (let i = 0; i < recordIds.length; i += MAX_RECORDS_PER_REQUEST) {
+    const chunk = recordIds.slice(i, i + MAX_RECORDS_PER_REQUEST)
+    const url = new URL(`${AIRTABLE_API_BASE_URL}/${baseId}/${encodeURIComponent(tableName)}`)
+    
+    // Add record IDs as query parameters
+    chunk.forEach(id => {
+      url.searchParams.append('records[]', id)
+    })
+
+    const response = await fetch(url.toString(), {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    })
+
+    if (!response.ok) {
+      const error = await response.text()
+      throw new Error(`Failed to delete job categories: ${error}`)
+    }
+  }
+}
+
+/**
+ * Check if a slug exists in Job Categories Airtable table
+ */
+export async function checkJobCategorySlugExists(slug: string): Promise<boolean> {
+  try {
+    const tableName = getJobCategoriesTableName()
+    // Escape single quotes in slug for Airtable formula
+    const escapedSlug = slug.replace(/'/g, "''")
+    const filterFormula = `{Slug} = '${escapedSlug}'`
+    
+    const response = await getJobCategories({
+      filterByFormula: filterFormula,
+      maxRecords: 1,
+    })
+    
+    return response.records.length > 0
+  } catch (err) {
+    console.error('Error checking job category slug existence:', err)
+    // If there's an error checking, assume it doesn't exist to allow creation
+    return false
+  }
+}
+
+/**
+ * Generate a unique slug for job categories by checking Airtable and appending suffix if needed
+ */
+export async function generateUniqueJobCategorySlug(name: string): Promise<string> {
+  const baseSlug = slugify(name.trim(), {
+    lower: true,
+    strict: true,
+  })
+
+  // Check if base slug exists
+  const baseExists = await checkJobCategorySlugExists(baseSlug)
+  if (!baseExists) {
+    return baseSlug
+  }
+
+  // Try with suffix starting from 2
+  let counter = 2
+  let uniqueSlug = `${baseSlug}-${counter}`
+  
+  while (await checkJobCategorySlugExists(uniqueSlug)) {
+    counter++
+    uniqueSlug = `${baseSlug}-${counter}`
+    
+    // Safety limit to prevent infinite loops
+    if (counter > 1000) {
+      throw new Error('Unable to generate unique slug after many attempts')
+    }
+  }
+
+  return uniqueSlug
+}
+
+/**
+ * Fetch all job types from Airtable
+ */
+export async function getJobTypes(options?: {
+  maxRecords?: number
+  view?: string
+  filterByFormula?: string
+  sort?: Array<{ field: string; direction: 'asc' | 'desc' }>
+}): Promise<AirtableResponse<JobTypeFields>> {
+  const tableName = getJobTypesTableName()
+  return fetchAirtableRecords<JobTypeFields>(tableName, options)
+}
+
+/**
+ * Create a new job type in Airtable
+ */
+export async function createJobType(fields: JobTypeFields): Promise<AirtableRecord<JobTypeFields>> {
+  const accessToken = await getValidAccessToken()
+  if (!accessToken) {
+    throw new Error('No valid access token. Please log in again.')
+  }
+
+  const baseId = getAirtableBaseId()
+  const tableName = getJobTypesTableName()
+  const url = `${AIRTABLE_API_BASE_URL}/${baseId}/${encodeURIComponent(tableName)}`
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      records: [
+        {
+          fields: fields,
+        },
+      ],
+    }),
+  })
+
+  if (!response.ok) {
+    const error = await response.text()
+    throw new Error(`Failed to create job type: ${error}`)
+  }
+
+  const data = await response.json()
+  return data.records[0]
+}
+
+/**
+ * Update a job type in Airtable
+ */
+export async function updateJobType(recordId: string, fields: Partial<JobTypeFields>): Promise<AirtableRecord<JobTypeFields>> {
+  const accessToken = await getValidAccessToken()
+  if (!accessToken) {
+    throw new Error('No valid access token. Please log in again.')
+  }
+
+  const baseId = getAirtableBaseId()
+  const tableName = getJobTypesTableName()
+  const url = `${AIRTABLE_API_BASE_URL}/${baseId}/${encodeURIComponent(tableName)}/${recordId}`
+
+  const response = await fetch(url, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      fields: fields,
+    }),
+  })
+
+  if (!response.ok) {
+    const error = await response.text()
+    throw new Error(`Failed to update job type: ${error}`)
+  }
+
+  const data = await response.json()
+  return data
+}
+
+/**
+ * Delete a single job type from Airtable
+ */
+export async function deleteJobType(recordId: string): Promise<void> {
+  const accessToken = await getValidAccessToken()
+  if (!accessToken) {
+    throw new Error('No valid access token. Please log in again.')
+  }
+
+  const baseId = getAirtableBaseId()
+  const tableName = getJobTypesTableName()
+  const url = `${AIRTABLE_API_BASE_URL}/${baseId}/${encodeURIComponent(tableName)}/${recordId}`
+
+  const response = await fetch(url, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+
+  if (!response.ok) {
+    const error = await response.text()
+    throw new Error(`Failed to delete job type: ${error}`)
+  }
+}
+
+/**
+ * Delete multiple job types from Airtable
+ * Note: Airtable API allows deleting up to 10 records per request
+ */
+export async function deleteJobTypes(recordIds: string[]): Promise<void> {
+  if (recordIds.length === 0) {
+    return
+  }
+
+  const accessToken = await getValidAccessToken()
+  if (!accessToken) {
+    throw new Error('No valid access token. Please log in again.')
+  }
+
+  const baseId = getAirtableBaseId()
+  const tableName = getJobTypesTableName()
+  const MAX_RECORDS_PER_REQUEST = 10
+  
+  // Split into chunks of 10 (Airtable's limit)
+  for (let i = 0; i < recordIds.length; i += MAX_RECORDS_PER_REQUEST) {
+    const chunk = recordIds.slice(i, i + MAX_RECORDS_PER_REQUEST)
+    const url = new URL(`${AIRTABLE_API_BASE_URL}/${baseId}/${encodeURIComponent(tableName)}`)
+    
+    // Add record IDs as query parameters
+    chunk.forEach(id => {
+      url.searchParams.append('records[]', id)
+    })
+
+    const response = await fetch(url.toString(), {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    })
+
+    if (!response.ok) {
+      const error = await response.text()
+      throw new Error(`Failed to delete job types: ${error}`)
+    }
+  }
+}
+
+/**
+ * Check if a slug exists in Job Types Airtable table
+ */
+export async function checkJobTypeSlugExists(slug: string): Promise<boolean> {
+  try {
+    const tableName = getJobTypesTableName()
+    // Escape single quotes in slug for Airtable formula
+    const escapedSlug = slug.replace(/'/g, "''")
+    const filterFormula = `{Slug} = '${escapedSlug}'`
+    
+    const response = await getJobTypes({
+      filterByFormula: filterFormula,
+      maxRecords: 1,
+    })
+    
+    return response.records.length > 0
+  } catch (err) {
+    console.error('Error checking job type slug existence:', err)
+    // If there's an error checking, assume it doesn't exist to allow creation
+    return false
+  }
+}
+
+/**
+ * Generate a unique slug for job types by checking Airtable and appending suffix if needed
+ */
+export async function generateUniqueJobTypeSlug(name: string): Promise<string> {
+  const baseSlug = slugify(name.trim(), {
+    lower: true,
+    strict: true,
+  })
+
+  // Check if base slug exists
+  const baseExists = await checkJobTypeSlugExists(baseSlug)
+  if (!baseExists) {
+    return baseSlug
+  }
+
+  // Try with suffix starting from 2
+  let counter = 2
+  let uniqueSlug = `${baseSlug}-${counter}`
+  
+  while (await checkJobTypeSlugExists(uniqueSlug)) {
+    counter++
+    uniqueSlug = `${baseSlug}-${counter}`
+    
+    // Safety limit to prevent infinite loops
+    if (counter > 1000) {
+      throw new Error('Unable to generate unique slug after many attempts')
+    }
+  }
+
+  return uniqueSlug
+}
