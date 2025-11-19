@@ -4,6 +4,7 @@ import { ThemeProvider } from '@/components/theme/theme-provider'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { LoginPage } from '@/pages/LoginPage'
 import { DashboardPage } from '@/pages/DashboardPage'
+import { LocationsPage } from '@/pages/LocationsPage'
 import { OAuthCallbackPage } from '@/pages/OAuthCallbackPage'
 
 function App() {
@@ -19,6 +20,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/locations"
+              element={
+                <ProtectedRoute>
+                  <LocationsPage />
                 </ProtectedRoute>
               }
             />
