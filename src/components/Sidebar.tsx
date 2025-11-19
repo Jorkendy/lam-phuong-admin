@@ -2,7 +2,6 @@ import { Link, useLocation } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
-import { ThemeToggle } from '@/components/theme/theme-toggle'
 
 interface NavItem {
   title: string
@@ -118,10 +117,6 @@ export function Sidebar({ onClose }: SidebarProps) {
         })}
       </nav>
       <div className="border-t border-border p-4 space-y-2">
-        <div className="flex items-center justify-between px-3">
-          <span className="text-sm text-muted-foreground">Theme</span>
-          <ThemeToggle />
-        </div>
         <Button
           onClick={logout}
           variant="outline"

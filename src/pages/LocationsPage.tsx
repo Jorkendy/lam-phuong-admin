@@ -285,63 +285,65 @@ export function LocationsPage() {
                   }`}
                 >
                   <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <input
-                          type="checkbox"
-                          checked={selectedIds.has(location.id)}
-                          onChange={() => handleToggleSelect(location.id)}
-                          onClick={(e) => e.stopPropagation()}
-                          className="w-4 h-4 rounded border-input text-primary focus:ring-2 focus:ring-ring focus:ring-offset-2 flex-shrink-0 mt-1"
-                        />
-                        <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors flex-shrink-0">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="20"
-                            height="20"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="text-primary"
+                    <div className="flex items-start gap-2">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(location.id)}
+                        onChange={() => handleToggleSelect(location.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-4 h-4 rounded border-input text-primary focus:ring-2 focus:ring-ring focus:ring-offset-2 flex-shrink-0 mt-1"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start gap-2 mb-2">
+                          <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors flex-shrink-0">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="20"
+                              height="20"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              className="text-primary"
+                            >
+                              <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                              <circle cx="12" cy="10" r="3" />
+                            </svg>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <CardTitle className="text-lg font-semibold break-words leading-tight">
+                              {location.fields.Name || 'Unnamed Location'}
+                            </CardTitle>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDeleteClick([location.id])
+                            }}
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 flex-shrink-0"
                           >
-                            <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
-                            <circle cx="12" cy="10" r="3" />
-                          </svg>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <CardTitle className="text-lg font-semibold truncate">
-                            {location.fields.Name || 'Unnamed Location'}
-                          </CardTitle>
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="M3 6h18" />
+                              <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                              <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                            </svg>
+                          </Button>
                         </div>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleDeleteClick([location.id])
-                        }}
-                        className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 flex-shrink-0"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="M3 6h18" />
-                          <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                          <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                        </svg>
-                      </Button>
                     </div>
                   </CardHeader>
                 <CardContent className="pt-0">
@@ -416,18 +418,18 @@ export function LocationsPage() {
           className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in-0 duration-200"
           onClick={handleDeleteCancel}
         >
-          {/* Backdrop with blur - adapts to theme */}
-          <div className="absolute inset-0 bg-black/60 dark:bg-black/70 backdrop-blur-sm animate-in fade-in-0 duration-200" />
+          {/* Backdrop with blur */}
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in-0 duration-200" />
           
         {/* Dialog Container */}
           <div 
-            className="relative w-full max-w-md bg-white dark:bg-card rounded-lg shadow-2xl border-2 border-border overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-2 duration-200 text-foreground"
+            className="relative w-full max-w-md bg-white rounded-lg shadow-2xl border-2 border-border overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-2 duration-200 text-foreground"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header Section */}
             <div className="px-6 pt-6 pb-5">
               <div className="flex items-start gap-3">
-                <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-destructive/20 dark:bg-destructive/20 flex-shrink-0 mt-0.5">
+                <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-destructive/20 flex-shrink-0 mt-0.5">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="18"
@@ -446,10 +448,10 @@ export function LocationsPage() {
                   </svg>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h2 className="text-lg font-bold text-foreground dark:text-foreground leading-tight">
+                  <h2 className="text-lg font-bold text-foreground leading-tight">
                     Delete Location{deleteConfirm.ids.length > 1 ? 's' : ''}?
                   </h2>
-                  <p className="text-sm text-foreground/80 dark:text-foreground mt-1 leading-relaxed">
+                  <p className="text-sm text-foreground/80 mt-1 leading-relaxed">
                     {deleteConfirm.ids.length === 1
                       ? 'This action cannot be undone. The location will be permanently deleted.'
                       : `Are you sure you want to delete ${deleteConfirm.ids.length} locations? This action cannot be undone.`}
@@ -469,7 +471,7 @@ export function LocationsPage() {
                   variant="ghost"
                   onClick={handleDeleteCancel} 
                   disabled={deleting}
-                  className="px-5 h-9 font-medium text-foreground/90 hover:text-foreground hover:bg-muted/60 dark:hover:bg-muted/30 transition-colors"
+                  className="px-5 h-9 font-medium text-foreground/90 hover:text-foreground hover:bg-muted/60 transition-colors"
                 >
                   Cancel
                 </Button>
@@ -478,7 +480,7 @@ export function LocationsPage() {
                   variant="destructive"
                   onClick={handleDeleteConfirm}
                   disabled={deleting}
-                  className="px-5 h-9 font-semibold bg-destructive text-destructive-foreground hover:bg-destructive/90 dark:hover:bg-destructive/90 shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md"
+                  className="px-5 h-9 font-semibold bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md"
                 >
                   {deleting ? (
                     <span className="flex items-center gap-2">

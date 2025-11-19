@@ -71,18 +71,18 @@ export function LocationFormDialog({
       className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in-0 duration-200"
       onClick={onClose}
     >
-      {/* Backdrop with blur - adapts to theme */}
-      <div className="absolute inset-0 bg-black/60 dark:bg-black/70 backdrop-blur-sm animate-in fade-in-0 duration-200" />
+      {/* Backdrop with blur */}
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in-0 duration-200" />
 
       {/* Dialog Container */}
       <div
-        className="relative w-full max-w-md bg-white dark:bg-card rounded-lg shadow-2xl border-2 border-border overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-2 duration-200"
+        className="relative w-full max-w-md bg-white rounded-lg shadow-2xl border-2 border-border overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-2 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header Section */}
         <div className="px-6 pt-6 pb-5">
           <div className="flex items-start gap-3">
-            <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-primary/20 dark:bg-primary/20 flex-shrink-0 mt-0.5">
+            <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-primary/20 flex-shrink-0 mt-0.5">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="18"
@@ -135,7 +135,7 @@ export function LocationFormDialog({
 
             {/* Error Message */}
             {error && (
-              <div className="flex items-start gap-2.5 p-3.5 rounded-md bg-destructive/10 dark:bg-destructive/20 border border-destructive/20 dark:border-destructive/30 text-sm text-destructive animate-in slide-in-from-top-1 duration-200">
+              <div className="flex items-start gap-2.5 p-3.5 rounded-md bg-destructive/10 border border-destructive/20 text-sm text-destructive animate-in slide-in-from-top-1 duration-200">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="16"
@@ -167,7 +167,7 @@ export function LocationFormDialog({
               variant="ghost"
               onClick={onClose}
               disabled={loading}
-              className="px-5 h-9 font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 dark:hover:bg-muted/30 transition-colors"
+              className="px-5 h-9 font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
             >
               Cancel
             </Button>
@@ -175,7 +175,7 @@ export function LocationFormDialog({
               type="submit"
               variant="secondary"
               disabled={loading || !formData.Name?.trim()}
-              className="px-5 h-9 font-semibold bg-secondary text-secondary-foreground hover:bg-secondary/80 dark:hover:bg-secondary/80 shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md"
+              className="px-5 h-9 font-semibold bg-secondary text-secondary-foreground hover:bg-secondary/80 shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md"
             >
               {loading ? (
                 <span className="flex items-center gap-2">

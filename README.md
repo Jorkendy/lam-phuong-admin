@@ -6,7 +6,6 @@ A React + TypeScript + Vite admin dashboard with Airtable OAuth authentication.
 
 - 🔐 Airtable OAuth 2.0 authentication
 - 📧 Traditional email/password login
-- 🎨 Dark/Light theme support
 - 🛡️ Protected routes
 - ⚡ Fast development with Vite
 
