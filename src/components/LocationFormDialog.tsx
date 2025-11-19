@@ -1,64 +1,81 @@
-import { useState, FormEvent } from 'react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { type LocationFields } from '@/lib/airtable-api'
+import { useState, type FormEvent } from "react";
+import slugify from "slugify";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { type LocationFields } from "@/lib/airtable-api";
 
 interface LocationFormDialogProps {
-  open: boolean
-  onClose: () => void
-  onSubmit: (fields: LocationFields) => Promise<void>
+  open: boolean;
+  onClose: () => void;
+  onSubmit: (fields: LocationFields) => Promise<void>;
 }
 
-export function LocationFormDialog({ open, onClose, onSubmit }: LocationFormDialogProps) {
+export function LocationFormDialog({
+  open,
+  onClose,
+  onSubmit,
+}: LocationFormDialogProps) {
   const [formData, setFormData] = useState<LocationFields>({
-    Name: '',
-  })
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+    Name: "",
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  if (!open) return null
+  if (!open) return null;
 
   const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
-    setError(null)
-    setLoading(true)
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
 
     try {
       // Validate required fields
       if (!formData.Name?.trim()) {
-        throw new Error('Name is required')
+        throw new Error("Name is required");
       }
 
-      await onSubmit(formData)
+      // Generate slug from name
+      const slug = slugify(formData.Name.trim(), {
+        lower: true,
+        strict: true,
+      });
+
+      // Submit with name and auto-generated slug
+      await onSubmit({
+        ...formData,
+        Slug: slug,
+      });
       // Reset form
       setFormData({
-        Name: '',
-      })
-      onClose()
+        Name: "",
+      });
+      onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create location')
+      setError(
+        err instanceof Error ? err.message : "Failed to create location"
+      );
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleChange = (value: string) => {
     setFormData({
       Name: value,
-    })
-  }
+    });
+  };
 
   return (
-    <div 
+    <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in-0 duration-200"
       onClick={onClose}
     >
       {/* Backdrop with blur - adapts to theme */}
       <div className="absolute inset-0 bg-black/60 dark:bg-black/70 backdrop-blur-sm animate-in fade-in-0 duration-200" />
-      
+
       {/* Dialog Container */}
-      <div 
+      <div
         className="relative w-full max-w-md bg-white dark:bg-card rounded-lg shadow-2xl border-2 border-border overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-2 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
@@ -83,8 +100,12 @@ export function LocationFormDialog({ open, onClose, onSubmit }: LocationFormDial
               </svg>
             </div>
             <div className="flex-1 min-w-0">
-              <h2 className="text-lg font-bold text-foreground leading-tight">New Location</h2>
-              <p className="text-sm text-muted-foreground mt-1 leading-relaxed">Add a location to your database</p>
+              <h2 className="text-lg font-bold text-foreground leading-tight">
+                New Location
+              </h2>
+              <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+                Add a location to your database
+              </p>
             </div>
           </div>
         </div>
@@ -94,43 +115,43 @@ export function LocationFormDialog({ open, onClose, onSubmit }: LocationFormDial
           <div className="space-y-5">
             {/* Input Field */}
             <div className="space-y-3">
-              <Label 
-                htmlFor="name" 
+              <Label
+                htmlFor="name"
                 className="text-sm font-medium text-foreground"
               >
                 Location Name
               </Label>
-                <Input
-                  id="name"
-                  value={formData.Name || ''}
-                  onChange={(e) => handleChange(e.target.value)}
-                  placeholder="Enter location name"
-                  required
-                  disabled={loading}
-                  autoFocus
+              <Input
+                id="name"
+                value={formData.Name || ""}
+                onChange={(e) => handleChange(e.target.value)}
+                placeholder="Enter location name"
+                required
+                disabled={loading}
+                autoFocus
                 className="h-10 bg-background border-input focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all mt-3"
-                />
+              />
             </div>
 
             {/* Error Message */}
             {error && (
               <div className="flex items-start gap-2.5 p-3.5 rounded-md bg-destructive/10 dark:bg-destructive/20 border border-destructive/20 dark:border-destructive/30 text-sm text-destructive animate-in slide-in-from-top-1 duration-200">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
                   width="16"
                   height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
                   strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                   className="flex-shrink-0 mt-0.5"
-                  >
-                    <circle cx="12" cy="12" r="10" />
-                    <line x1="12" y1="8" x2="12" y2="12" />
-                    <line x1="12" y1="16" x2="12.01" y2="16" />
-                  </svg>
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
                 <span className="flex-1">{error}</span>
               </div>
             )}
@@ -141,17 +162,17 @@ export function LocationFormDialog({ open, onClose, onSubmit }: LocationFormDial
 
           {/* Action Buttons */}
           <div className="flex items-center justify-between gap-3">
-            <Button 
-              type="button" 
+            <Button
+              type="button"
               variant="ghost"
-              onClick={onClose} 
+              onClick={onClose}
               disabled={loading}
               className="px-5 h-9 font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 dark:hover:bg-muted/30 transition-colors"
             >
               Cancel
             </Button>
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               variant="secondary"
               disabled={loading || !formData.Name?.trim()}
               className="px-5 h-9 font-semibold bg-secondary text-secondary-foreground hover:bg-secondary/80 dark:hover:bg-secondary/80 shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md"
@@ -185,6 +206,5 @@ export function LocationFormDialog({ open, onClose, onSubmit }: LocationFormDial
         </form>
       </div>
     </div>
-  )
+  );
 }
-
