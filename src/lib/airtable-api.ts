@@ -117,3 +117,40 @@ export async function getLocations(options?: {
   return fetchAirtableRecords<LocationFields>(tableName, options)
 }
 
+/**
+ * Create a new location in Airtable
+ */
+export async function createLocation(fields: LocationFields): Promise<AirtableRecord<LocationFields>> {
+  const accessToken = await getValidAccessToken()
+  if (!accessToken) {
+    throw new Error('No valid access token. Please log in again.')
+  }
+
+  const baseId = getAirtableBaseId()
+  const tableName = getLocationsTableName()
+  const url = `${AIRTABLE_API_BASE_URL}/${baseId}/${encodeURIComponent(tableName)}`
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      records: [
+        {
+          fields: fields,
+        },
+      ],
+    }),
+  })
+
+  if (!response.ok) {
+    const error = await response.text()
+    throw new Error(`Failed to create location: ${error}`)
+  }
+
+  const data = await response.json()
+  return data.records[0]
+}
+
