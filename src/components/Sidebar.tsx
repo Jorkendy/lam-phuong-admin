@@ -126,9 +126,9 @@ export function Sidebar({ onClose }: SidebarProps) {
               to={item.href}
               onClick={handleLinkClick}
               className={cn(
-                'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                'flex items-center gap-3 px-3 py-2.5 text-sm font-medium transition-all duration-200 rounded-r-lg',
                 isActive
-                  ? 'bg-primary text-primary-foreground'
+                  ? 'bg-[#f3f4f6] text-foreground font-semibold border-l-4 border-[#3b82f6]'
                   : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
               )}
             >
