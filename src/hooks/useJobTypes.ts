@@ -23,15 +23,25 @@ async function fetchJobTypesWithCache(): Promise<AirtableRecord<JobTypeFields>[]
 
   if (cachedData) {
     console.log('[Job Types Cache] Using IndexedDB cache')
+    // Debug: Log first record to verify Status field is present in cache
+    if (cachedData.length > 0) {
+      console.log('[Job Types Cache] Cached record fields:', Object.keys(cachedData[0].fields))
+      console.log('[Job Types Cache] Cached record Status:', cachedData[0].fields.Status)
+    }
     return cachedData
   }
 
   // Layer 3: Fetch from API (rate limiter is applied in airtable-api.ts)
   console.log('[Job Types Cache] Fetching from API')
-  const response = await getJobTypes({
-    fields: ['Name'], // Only fetch name field needed for display
-  })
+  const response = await getJobTypes()
   const records = response.records
+
+  // Debug: Log first record to verify Status field is present
+  if (records.length > 0) {
+    console.log('[Job Types Cache] Sample record fields:', Object.keys(records[0].fields))
+    console.log('[Job Types Cache] Sample record Status:', records[0].fields.Status)
+    console.log('[Job Types Cache] Full sample record:', JSON.stringify(records[0], null, 2))
+  }
 
   // Save to IndexedDB cache
   await setCachedData(CACHE_KEYS.jobTypes, records)
@@ -84,6 +94,12 @@ export function useJobTypes() {
     // Refetch all queries with this key (will fetch fresh data since cache is cleared)
     await queryClient.refetchQueries({ queryKey: ['jobTypes'] })
     console.log('[Job Types Cache] React Query refetched')
+    
+    // Debug: Log refetched data to verify Status field
+    const refetchedData = queryClient.getQueryData<AirtableRecord<JobTypeFields>[]>(['jobTypes'])
+    if (refetchedData && refetchedData.length > 0) {
+      console.log('[Job Types Cache] After refetch - Sample Status:', refetchedData[0].fields.Status)
+    }
   }
 
   /**
