@@ -1107,7 +1107,7 @@ export async function createJobPosting(fields: JobPostingFields): Promise<Airtab
 
   if (!response.ok) {
     const error = await response.text()
-    throw new Error(`Failed to create job posting: ${error}`)
+    throw new Error(`Failed to create job opening: ${error}`)
   }
 
   const data = await response.json()
@@ -1140,7 +1140,7 @@ export async function updateJobPosting(recordId: string, fields: Partial<JobPost
 
   if (!response.ok) {
     const error = await response.text()
-    throw new Error(`Failed to update job posting: ${error}`)
+    throw new Error(`Failed to update job opening: ${error}`)
   }
 
   const data = await response.json()
@@ -1169,7 +1169,7 @@ export async function deleteJobPosting(recordId: string): Promise<void> {
 
   if (!response.ok) {
     const error = await response.text()
-    throw new Error(`Failed to delete job posting: ${error}`)
+    throw new Error(`Failed to delete job opening: ${error}`)
   }
 }
 
@@ -1210,7 +1210,7 @@ export async function deleteJobPostings(recordIds: string[]): Promise<void> {
 
     if (!response.ok) {
       const error = await response.text()
-      throw new Error(`Failed to delete job postings: ${error}`)
+      throw new Error(`Failed to delete job openings: ${error}`)
     }
   }
 }

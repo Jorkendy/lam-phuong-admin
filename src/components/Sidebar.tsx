@@ -117,7 +117,7 @@ const navItems: NavItem[] = [
     ),
   },
   {
-    title: 'Job Postings',
+    title: 'Job Openings',
     href: '/job-postings',
     icon: (
       <svg

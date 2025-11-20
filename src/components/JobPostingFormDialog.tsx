@@ -239,7 +239,7 @@ export function JobPostingFormDialog({
       onClose();
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Failed to save job posting"
+        err instanceof Error ? err.message : "Failed to save job opening"
       );
     } finally {
       setLoading(false);
@@ -301,10 +301,10 @@ export function JobPostingFormDialog({
             </div>
             <div className="flex-1 min-w-0">
               <h2 className="text-lg font-bold text-foreground leading-tight">
-                {editingPosting ? 'Edit Job Posting' : 'New Job Posting'}
+                {editingPosting ? 'Edit Job Opening' : 'New Job Opening'}
               </h2>
               <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-                {editingPosting ? 'Update job posting details' : 'Create a new job posting'}
+                {editingPosting ? 'Update job opening details' : 'Create a new job opening'}
               </p>
             </div>
           </div>

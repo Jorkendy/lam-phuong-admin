@@ -49,7 +49,7 @@ export function JobPostingPreview({
     ...productGroupNames,
   ].filter(Boolean)
 
-  const title = formData['Tiêu đề'] || 'Untitled Job Posting'
+  const title = formData['Tiêu đề'] || 'Untitled Job Opening'
   const introduction = formData['Giới thiệu'] || ''
   const jobDescription = formData['Mô tả công việc'] || ''
   const requirements = formData['Yêu cầu'] || ''

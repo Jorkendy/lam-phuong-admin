@@ -95,7 +95,26 @@ export function JobPostingFormPage() {
   useEffect(() => {
     if (isEditMode && id) {
       loadJobPosting(id)
+    } else if (!isEditMode) {
+      // Reset form when switching from edit to create mode
+      setFormData({
+        'Tiêu đề': '',
+        'Giới thiệu': '',
+        'Mô tả công việc': '',
+        'Yêu cầu': '',
+        'Quyền lợi': '',
+        'Cách thức ứng tuyển': '',
+        'Hạn chót nhận': '',
+        'Khu vực': undefined,
+        'Danh mục công việc': [],
+        'Loại công việc': [],
+        'Nhóm sản phẩm': [],
+      })
+      setOriginalTitle('')
+      setError(null)
+      setHasUnsavedChanges(false)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditMode, id])
 
   useEffect(() => {
@@ -169,7 +188,12 @@ export function JobPostingFormPage() {
       const posting = response.records.find(p => p.id === postingId)
 
       if (!posting) {
-        setError('Job posting not found')
+        setError('Job opening not found')
+        setLoading(false)
+        // Auto-redirect after showing error
+        setTimeout(() => {
+          navigate('/job-postings')
+        }, 3000)
         return
       }
 
@@ -218,7 +242,7 @@ export function JobPostingFormPage() {
       // Data will be loaded via hooks when MultiSelect opens
       // The hooks use caching, so data will be available immediately if already cached
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load job posting')
+      setError(err instanceof Error ? err.message : 'Failed to load job opening')
     } finally {
       setLoading(false)
     }
@@ -304,7 +328,7 @@ export function JobPostingFormPage() {
       setHasUnsavedChanges(false)
       navigate('/job-postings')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save job posting')
+      setError(err instanceof Error ? err.message : 'Failed to save job opening')
     } finally {
       setSaving(false)
     }
@@ -315,7 +339,66 @@ export function JobPostingFormPage() {
       <AppLayout>
         <div className="flex flex-col items-center justify-center min-h-[60vh]">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"></div>
-          <span className="mt-4 text-muted-foreground font-medium">Loading job posting...</span>
+          <span className="mt-4 text-muted-foreground font-medium">
+            {isEditMode ? 'Loading job opening...' : 'Loading...'}
+          </span>
+        </div>
+      </AppLayout>
+    )
+  }
+
+  // Error state with navigation option
+  if (error && isEditMode && !loading) {
+    return (
+      <AppLayout>
+        <div className="min-h-full bg-[#f9fafb]">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="bg-white rounded-lg border border-destructive/20 p-6 shadow-sm max-w-2xl mx-auto">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-destructive"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="12" />
+                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-xl font-semibold text-foreground mb-2">Error Loading Job Opening</h2>
+                  <p className="text-muted-foreground mb-4">{error}</p>
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={() => navigate('/job-postings')}
+                      variant="default"
+                    >
+                      Back to Job Openings
+                    </Button>
+                    {id && (
+                      <Button
+                        onClick={() => {
+                          setError(null)
+                          loadJobPosting(id)
+                        }}
+                        variant="outline"
+                      >
+                        Retry
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </AppLayout>
     )
@@ -328,12 +411,24 @@ export function JobPostingFormPage() {
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <div className="flex justify-between items-center">
               <div>
-                <h1 className="text-3xl font-bold text-foreground tracking-tight">
-                  {isEditMode ? 'Edit Job Posting' : 'Create Job Posting'}
-                </h1>
+                <div className="flex items-center gap-3">
+                  <h1 className="text-3xl font-bold text-foreground tracking-tight">
+                    {isEditMode ? 'Edit Job Opening' : 'Create Job Opening'}
+                  </h1>
+                  {isEditMode && (
+                    <span className="px-3 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded-full">
+                      Edit Mode
+                    </span>
+                  )}
+                </div>
                 <p className="text-sm text-muted-foreground mt-1">
-                  {isEditMode ? 'Update job posting details' : 'Create a new job posting'}
+                  {isEditMode ? 'Update job opening details' : 'Create a new job opening'}
                 </p>
+                {isEditMode && id && (
+                  <p className="text-xs text-muted-foreground mt-1 font-mono">
+                    ID: {id}
+                  </p>
+                )}
               </div>
               <div className="flex items-center gap-3">
                 <Button

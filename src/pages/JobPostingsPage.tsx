@@ -480,7 +480,7 @@ export function JobPostingsPage() {
     } catch (err) {
       console.error("[JobPostingsPage] Error loading job postings:", err);
       setError(
-        err instanceof Error ? err.message : "Failed to load job postings"
+        err instanceof Error ? err.message : "Failed to load job openings"
       );
     } finally {
       setLoading(false);
@@ -543,7 +543,7 @@ export function JobPostingsPage() {
       alert(
         err instanceof Error
           ? err.message
-          : "Failed to delete job posting(s)"
+          : "Failed to delete job opening(s)"
       );
     } finally {
       setDeleting(false);
@@ -571,10 +571,10 @@ export function JobPostingsPage() {
             <div className="flex justify-between items-center">
               <div>
                 <h1 className="text-3xl font-bold text-foreground tracking-tight">
-                  Job Postings
+                  Job Openings
                 </h1>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Manage your job postings database
+                  Manage your job openings database
                 </p>
               </div>
               <div className="flex items-center gap-3">
@@ -626,7 +626,7 @@ export function JobPostingsPage() {
                     <path d="M5 12h14" />
                     <path d="M12 5v14" />
                   </svg>
-                  Create Job Posting
+                  Create Job Opening
                 </Button>
               </div>
             </div>
@@ -693,7 +693,7 @@ export function JobPostingsPage() {
                   </svg>
                 </div>
                 <CardTitle className="text-destructive">
-                  Error Loading Job Postings
+                  Error Loading Job Openings
                 </CardTitle>
                 <CardDescription className="mt-2">{error}</CardDescription>
               </CardHeader>
@@ -738,9 +738,9 @@ export function JobPostingsPage() {
                     <rect width="20" height="14" x="2" y="6" rx="2" />
                   </svg>
                 </div>
-                <CardTitle>No job postings yet</CardTitle>
+                <CardTitle>No job openings yet</CardTitle>
                 <CardDescription className="mt-2">
-                  Create your first job posting to get started
+                  Create your first job opening to get started
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -764,7 +764,7 @@ export function JobPostingsPage() {
                     <path d="M5 12h14" />
                     <path d="M12 5v14" />
                   </svg>
-                  Create Job Posting
+                  Create Job Opening
                 </Button>
               </CardContent>
             </Card>
@@ -777,7 +777,7 @@ export function JobPostingsPage() {
                   {/* Search Input - Wider on desktop */}
                   <div className="relative flex-1 md:flex-[2] lg:flex-[3]">
                     <label htmlFor="search-job-postings" className="sr-only">
-                      Search job postings
+                      Search job openings
                     </label>
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -797,7 +797,7 @@ export function JobPostingsPage() {
                     <input
                       id="search-job-postings"
                       type="text"
-                      placeholder="Search job postings... / Tìm kiếm bài tuyển dụng..."
+                      placeholder="Search job openings... / Tìm kiếm bài tuyển dụng..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="w-full pl-11 pr-11 py-3 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm md:text-base h-12"
@@ -1354,7 +1354,7 @@ export function JobPostingsPage() {
               {(debouncedSearchQuery || selectedLocations.length > 0 || selectedCategories.length > 0 || selectedJobTypes.length > 0 || selectedProductGroups.length > 0 || statusFilter !== "all") && (
                 <div className="mb-4 text-sm text-muted-foreground">
                   Showing {filteredJobPostings.length} of {jobPostings.length}{" "}
-                  job posting{jobPostings.length !== 1 ? "s" : ""}
+                  job opening{jobPostings.length !== 1 ? "s" : ""}
                 </div>
               )}
 
@@ -1380,7 +1380,7 @@ export function JobPostingsPage() {
                         <line x1="8.5" y1="8.5" x2="15.5" y2="15.5" />
                       </svg>
                     </div>
-                    <CardTitle>No job postings found</CardTitle>
+                    <CardTitle>No job openings found</CardTitle>
                     <CardDescription className="mt-2">
                       {(() => {
                         const hasSearch = debouncedSearchQuery.length > 0;
@@ -1392,19 +1392,19 @@ export function JobPostingsPage() {
                         const filterCount = [hasSearch, hasLocations, hasCategories, hasJobTypes, hasProductGroups, hasStatus].filter(Boolean).length;
 
                         if (filterCount > 1) {
-                          return `No job postings match your filters`;
+                          return `No job openings match your filters`;
                         } else if (hasSearch) {
-                          return `No job postings match "${debouncedSearchQuery}"`;
+                          return `No job openings match "${debouncedSearchQuery}"`;
                         } else if (hasLocations) {
-                          return "No job postings found in selected locations";
+                          return "No job openings found in selected locations";
                         } else if (hasCategories) {
-                          return "No job postings found in selected categories";
+                          return "No job openings found in selected categories";
                         } else if (hasJobTypes) {
-                          return "No job postings found in selected job types";
+                          return "No job openings found in selected job types";
                         } else if (hasProductGroups) {
-                          return "No job postings found in selected product groups";
+                          return "No job openings found in selected product groups";
                         } else if (hasStatus) {
-                          return `No job postings found with status: ${statusFilter}`;
+                          return `No job openings found with status: ${statusFilter}`;
                         }
                         return "Try adjusting your search or filters";
                       })()}
@@ -1507,14 +1507,14 @@ export function JobPostingsPage() {
                         />
                         <span className="text-sm font-medium text-foreground">
                           {selectedIds.size > 0
-                            ? `${filteredJobPostings.filter((p) => selectedIds.has(p.id)).length} of ${filteredJobPostings.length} job posting${filteredJobPostings.length !== 1 ? "s" : ""} selected`
+                            ? `${filteredJobPostings.filter((p) => selectedIds.has(p.id)).length} of ${filteredJobPostings.length} job opening${filteredJobPostings.length !== 1 ? "s" : ""} selected`
                             : "Select all"}
                         </span>
                       </div>
                     </div>
                   )}
 
-                  {/* Job Postings Grid */}
+                  {/* Job Openings Grid */}
                   <div className="grid gap-6 sm:gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                     {filteredJobPostings.map((posting) => {
                   const statusBadge = getStatusBadge(
@@ -1544,137 +1544,167 @@ export function JobPostingsPage() {
                   return (
                     <Card
                       key={posting.id}
-                      className={`group relative overflow-hidden rounded-xl border transition-all duration-200 ease-out cursor-pointer ${
+                      className={`group relative overflow-hidden rounded-xl border transition-all duration-200 ease-out ${
                         selectedIds.has(posting.id)
                           ? "border-primary border-2 shadow-lg translate-y-0"
                           : "border-[#e5e7eb] shadow-sm hover:border-[#d1d5db] hover:-translate-y-1 hover:shadow-lg"
                       }`}
-                      onClick={() =>
-                        navigate(`/job-postings/${posting.id}/edit`)
-                      }
                     >
-                      {/* Delete Button - Top Right */}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteClick([posting.id], posting.fields["Tiêu đề"]);
-                        }}
-                        className="absolute top-3 right-3 h-8 w-8 opacity-0 group-hover:opacity-100 text-[#ef4444] hover:text-[#dc2626] hover:bg-red-50 flex-shrink-0 transition-all duration-200 rounded-lg z-10"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="M3 6h18" />
-                          <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                          <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                        </svg>
-                      </Button>
-
-                      <CardHeader className="pb-4 pt-6 px-6">
+                      {/* Card Header - Title Section */}
+                      <CardHeader className="pb-4 pt-5 px-5">
                         <div className="flex items-start gap-3">
+                          {/* Checkbox */}
                           <input
                             type="checkbox"
                             checked={selectedIds.has(posting.id)}
                             onChange={() => handleToggleSelect(posting.id)}
                             onClick={(e) => e.stopPropagation()}
-                            className="w-5 h-5 rounded-md flex-shrink-0 mt-1 transition-all duration-200 cursor-pointer focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                            className="w-5 h-5 rounded-md flex-shrink-0 mt-1.5 transition-all duration-200 cursor-pointer focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                           />
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start gap-3 mb-3">
-                              <div className="p-2.5 rounded-xl bg-blue-100 group-hover:bg-blue-200 transition-all duration-200 flex-shrink-0 shadow-sm">
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  width="20"
-                                  height="20"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  className="text-blue-600"
-                                >
-                                  <path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
-                                  <rect width="20" height="14" x="2" y="6" rx="2" />
-                                </svg>
-                              </div>
-                              <div className="flex-1 min-w-0 pr-8">
-                                <CardTitle className="text-lg font-semibold break-words leading-tight text-foreground">
-                                  {posting.fields["Tiêu đề"] || "Untitled Job Posting"}
-                                </CardTitle>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </CardHeader>
-
-                      <CardContent className="pt-0 px-6 pb-6">
-                        {/* Status and Deadline Section */}
-                        <div className="pt-4 border-t border-border space-y-3">
-                          {/* Status Badge */}
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={`px-2.5 py-1 rounded-full text-xs font-medium ${statusBadge.bgColor} ${statusBadge.color}`}
-                            >
-                              {statusBadge.label}
-                            </span>
-                          </div>
-
-                          {/* Deadline */}
-                          <div className="flex items-center gap-2">
+                          
+                          {/* Icon */}
+                          <div className="p-2 rounded-lg bg-blue-50 group-hover:bg-blue-100 transition-all duration-200 flex-shrink-0">
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
-                              width="14"
-                              height="14"
+                              width="18"
+                              height="18"
                               viewBox="0 0 24 24"
                               fill="none"
                               stroke="currentColor"
                               strokeWidth="2"
                               strokeLinecap="round"
                               strokeLinejoin="round"
-                              className={
-                                deadlinePassed
-                                  ? "text-red-600"
-                                  : deadlineNear
-                                  ? "text-orange-600"
-                                  : "text-muted-foreground"
-                              }
+                              className="text-blue-600"
                             >
-                              <circle cx="12" cy="12" r="10" />
-                              <polyline points="12 6 12 12 16 14" />
+                              <path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+                              <rect width="20" height="14" x="2" y="6" rx="2" />
                             </svg>
-                            <span
-                              className={`text-sm ${
-                                deadlinePassed
-                                  ? "text-red-600 font-medium"
-                                  : deadlineNear
-                                  ? "text-orange-600 font-medium"
-                                  : "text-muted-foreground"
-                              }`}
+                          </div>
+
+                          {/* Title and Actions */}
+                          <div className="flex-1 min-w-0 pr-12">
+                            <CardTitle className="text-lg font-semibold break-words leading-snug text-foreground mb-0">
+                              {posting.fields["Tiêu đề"] || "Untitled Job Opening"}
+                            </CardTitle>
+                          </div>
+
+                          {/* Action Buttons - Top Right */}
+                          <div className="absolute top-4 right-4 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-200 z-10">
+                            {/* Edit Button */}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/job-postings/${posting.id}/edit`);
+                              }}
+                              className="h-7 w-7 text-blue-600 hover:text-blue-700 hover:bg-blue-50 flex-shrink-0 rounded-md"
+                              title="Edit job opening"
                             >
-                              {relativeDate || `Deadline: ${formatDate(posting.fields["Hạn chót nhận"])}`}
-                            </span>
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="14"
+                                height="14"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                              </svg>
+                            </Button>
+                            {/* Delete Button */}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteClick([posting.id], posting.fields["Tiêu đề"]);
+                              }}
+                              className="h-7 w-7 text-[#ef4444] hover:text-[#dc2626] hover:bg-red-50 flex-shrink-0 rounded-md"
+                              title="Delete job opening"
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="14"
+                                height="14"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <path d="M3 6h18" />
+                                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                              </svg>
+                            </Button>
                           </div>
                         </div>
+                      </CardHeader>
 
-                        {/* Tags Section */}
-                        <div className="mt-4 flex flex-wrap gap-2">
-                          {/* Locations Tags */}
-                          {locations.slice(0, 2).map((location, idx) => (
-                            <span
-                              key={idx}
-                              className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700"
-                            >
+                      {/* Card Content - Status, Deadline, and Tags */}
+                      <CardContent className="pt-0 px-5 pb-5">
+                        {/* Divider */}
+                        <div className="border-t border-border mb-4"></div>
+
+                        {/* Status and Deadline Row */}
+                        <div className="flex items-center gap-3 mb-4">
+                          {/* Status Badge */}
+                          <span
+                            className={`px-2.5 py-1 rounded-md text-xs font-medium ${statusBadge.bgColor} ${statusBadge.color}`}
+                          >
+                            {statusBadge.label}
+                          </span>
+
+                          {/* Deadline */}
+                          {posting.fields["Hạn chót nhận"] && (
+                            <div className="flex items-center gap-1.5">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="13"
+                                height="13"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className={
+                                  deadlinePassed
+                                    ? "text-red-600"
+                                    : deadlineNear
+                                    ? "text-orange-600"
+                                    : "text-muted-foreground"
+                                }
+                              >
+                                <circle cx="12" cy="12" r="10" />
+                                <polyline points="12 6 12 12 16 14" />
+                              </svg>
+                              <span
+                                className={`text-xs ${
+                                  deadlinePassed
+                                    ? "text-red-600 font-medium"
+                                    : deadlineNear
+                                    ? "text-orange-600 font-medium"
+                                    : "text-muted-foreground"
+                                }`}
+                              >
+                                {relativeDate || `Deadline: ${formatDate(posting.fields["Hạn chót nhận"])}`}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Tags Section - Organized by Type */}
+                        <div className="flex flex-wrap gap-2">
+                          {/* Location Tag - First priority */}
+                          {locations.length > 0 && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
                               <svg
                                 xmlns="http://www.w3.org/2000/svg"
                                 width="12"
@@ -1689,57 +1719,55 @@ export function JobPostingsPage() {
                                 <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
                                 <circle cx="12" cy="10" r="3" />
                               </svg>
-                              {location}
-                            </span>
-                          ))}
-                          {locations.length > 2 && (
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-                              +{locations.length - 2} more
+                              {locations[0]}
+                              {locations.length > 1 && (
+                                <span className="text-gray-500">+{locations.length - 1}</span>
+                              )}
                             </span>
                           )}
 
-                          {/* Categories Tags */}
+                          {/* Category Tags */}
                           {categories.slice(0, 2).map((category, idx) => (
                             <span
                               key={idx}
-                              className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700"
+                              className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-700 border border-blue-200"
                             >
                               {category}
                             </span>
                           ))}
                           {categories.length > 2 && (
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-                              +{categories.length - 2} more
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-700 border border-blue-200">
+                              +{categories.length - 2}
                             </span>
                           )}
 
-                          {/* Job Types Tags */}
+                          {/* Job Type Tags */}
                           {jobTypes.slice(0, 2).map((type, idx) => (
                             <span
                               key={idx}
-                              className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700"
+                              className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-green-100 text-green-700 border border-green-200"
                             >
                               {type}
                             </span>
                           ))}
                           {jobTypes.length > 2 && (
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
-                              +{jobTypes.length - 2} more
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-green-100 text-green-700 border border-green-200">
+                              +{jobTypes.length - 2}
                             </span>
                           )}
 
-                          {/* Product Groups Tags */}
+                          {/* Product Group Tags */}
                           {productGroups.slice(0, 1).map((group, idx) => (
                             <span
                               key={idx}
-                              className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700"
+                              className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-purple-100 text-purple-700 border border-purple-200"
                             >
                               {group}
                             </span>
                           ))}
                           {productGroups.length > 1 && (
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
-                              +{productGroups.length - 1} more
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-purple-100 text-purple-700 border border-purple-200">
+                              +{productGroups.length - 1}
                             </span>
                           )}
                         </div>
@@ -1761,12 +1789,12 @@ export function JobPostingsPage() {
           <Card className="w-full max-w-md mx-4 border-destructive/20">
             <CardHeader>
               <CardTitle className="text-destructive">
-                Delete Job Posting{deleteConfirm.ids.length > 1 ? "s" : ""}?
+                Delete Job Opening{deleteConfirm.ids.length > 1 ? "s" : ""}?
               </CardTitle>
               <CardDescription>
                 {deleteConfirm.ids.length === 1
-                  ? `Are you sure you want to delete "${deleteConfirm.title || "this job posting"}"? This action cannot be undone.`
-                  : `Are you sure you want to delete ${deleteConfirm.ids.length} job postings? This action cannot be undone.`}
+                  ? `Are you sure you want to delete "${deleteConfirm.title || "this job opening"}"? This action cannot be undone.`
+                  : `Are you sure you want to delete ${deleteConfirm.ids.length} job openings? This action cannot be undone.`}
               </CardDescription>
             </CardHeader>
             <CardContent className="flex justify-end gap-3">
