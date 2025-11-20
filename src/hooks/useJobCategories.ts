@@ -68,11 +68,20 @@ export function useJobCategories() {
    * Invalidate cache (useful when job categories are created/updated/deleted)
    */
   const invalidateCache = async () => {
-    // Invalidate React Query cache
-    await queryClient.invalidateQueries({ queryKey: ['jobCategories'] })
-    // Clear IndexedDB cache
+    console.log('[Job Categories Cache] Invalidating cache...')
+    
+    // Clear IndexedDB cache first
     const { deleteCachedData } = await import('@/lib/indexeddb-cache')
     await deleteCachedData(CACHE_KEYS.jobCategories)
+    console.log('[Job Categories Cache] IndexedDB cache cleared')
+    
+    // Remove the query from cache to force fresh fetch
+    queryClient.removeQueries({ queryKey: ['jobCategories'] })
+    console.log('[Job Categories Cache] React Query cache removed')
+    
+    // Refetch all queries with this key (will fetch fresh data since cache is cleared)
+    await queryClient.refetchQueries({ queryKey: ['jobCategories'] })
+    console.log('[Job Categories Cache] React Query refetched')
   }
 
   /**

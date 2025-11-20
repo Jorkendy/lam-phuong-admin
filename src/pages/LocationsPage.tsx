@@ -27,10 +27,14 @@ export function LocationsPage() {
 
   const handleCreateLocation = async (fields: LocationFields) => {
     try {
+      console.log('[LocationsPage] Creating location:', fields.Name)
       await createLocation(fields)
+      console.log('[LocationsPage] Location created successfully, invalidating cache...')
       // Invalidate cache to force refresh
       await invalidateCache()
+      console.log('[LocationsPage] Cache invalidated successfully')
     } catch (err) {
+      console.error('[LocationsPage] Error creating location:', err)
       setError(err instanceof Error ? err.message : 'Failed to create location')
       throw err
     }
@@ -70,7 +74,9 @@ export function LocationsPage() {
       // Clear selection and invalidate cache
       setSelectedIds(new Set())
       setDeleteConfirm({ open: false, ids: [] })
+      console.log('[LocationsPage] Deleting locations, invalidating cache...')
       await invalidateCache()
+      console.log('[LocationsPage] Cache invalidated after delete')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete location(s)')
       setDeleteConfirm({ open: false, ids: [] })
@@ -89,6 +95,7 @@ export function LocationsPage() {
       setError(null)
       
       const newStatus = currentStatus === "Active" ? "Disabled" : "Active"
+      console.log('[LocationsPage] Updating location status:', locationId, newStatus)
       await updateLocation(locationId, { Status: newStatus })
       
       // Update local state optimistically
@@ -97,9 +104,14 @@ export function LocationsPage() {
           ? { ...loc, fields: { ...loc.fields, Status: newStatus } }
           : loc
       ))
+      
+      // Invalidate cache to ensure Job Postings page sees the update
+      console.log('[LocationsPage] Invalidating cache after status update...')
+      await invalidateCache()
+      console.log('[LocationsPage] Cache invalidated after status update')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update location status')
-      // Invalidate cache to sync with server
+      // Invalidate cache to sync with server even on error
       await invalidateCache()
     } finally {
       setTogglingIds(prev => {

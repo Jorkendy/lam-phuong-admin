@@ -166,13 +166,16 @@ export function JobPostingsPage() {
 
   // Get locations options from hook data
   const locationOptions = useMemo(() => {
-    return locationsData
+    const options = locationsData
       .filter((loc) => loc.fields.Name && loc.fields.Name.trim())
       .map((loc) => ({
         id: loc.fields.Name || "",
         label: loc.fields.Name || "",
       }))
       .sort((a, b) => a.label.localeCompare(b.label));
+    
+    console.log('[JobPostingsPage] Location options updated:', options.length, 'locations');
+    return options;
   }, [locationsData]);
 
   // Get job categories options from hook data

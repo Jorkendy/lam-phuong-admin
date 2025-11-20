@@ -68,11 +68,20 @@ export function useLocations() {
    * Invalidate cache (useful when locations are created/updated/deleted)
    */
   const invalidateCache = async () => {
-    // Invalidate React Query cache
-    await queryClient.invalidateQueries({ queryKey: ['locations'] })
-    // Clear IndexedDB cache
+    console.log('[Locations Cache] Invalidating cache...')
+    
+    // Clear IndexedDB cache first
     const { deleteCachedData } = await import('@/lib/indexeddb-cache')
     await deleteCachedData(CACHE_KEYS.locations)
+    console.log('[Locations Cache] IndexedDB cache cleared')
+    
+    // Remove the query from cache to force fresh fetch
+    queryClient.removeQueries({ queryKey: ['locations'] })
+    console.log('[Locations Cache] React Query cache removed')
+    
+    // Refetch all queries with this key (will fetch fresh data since cache is cleared)
+    await queryClient.refetchQueries({ queryKey: ['locations'] })
+    console.log('[Locations Cache] React Query refetched')
   }
 
   /**

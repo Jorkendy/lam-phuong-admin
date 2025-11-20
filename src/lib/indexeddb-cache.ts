@@ -100,10 +100,13 @@ export async function setCachedData<T>(
  */
 export async function deleteCachedData(key: string): Promise<void> {
   try {
+    console.log('[IndexedDB Cache] Deleting cache entry:', key)
     const db = await getDB()
     await db.delete('cache', key)
+    console.log('[IndexedDB Cache] Successfully deleted cache entry:', key)
   } catch (error) {
-    console.error('Error deleting from IndexedDB cache:', error)
+    console.error('[IndexedDB Cache] Error deleting from IndexedDB cache:', error)
+    throw error // Re-throw to allow caller to handle
   }
 }
 

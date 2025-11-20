@@ -3,11 +3,11 @@ import { AppLayout } from '@/components/AppLayout'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { JobCategoryFormDialog } from '@/components/JobCategoryFormDialog'
-import { getJobCategories, createJobCategory, updateJobCategory, deleteJobCategory, deleteJobCategories, type JobCategoryFields, type AirtableRecord } from '@/lib/airtable-api'
+import { createJobCategory, updateJobCategory, deleteJobCategory, deleteJobCategories, type JobCategoryFields, type AirtableRecord } from '@/lib/airtable-api'
+import { useJobCategories } from '@/hooks/useJobCategories'
 
 export function JobCategoriesPage() {
-  const [jobCategories, setJobCategories] = useState<AirtableRecord<JobCategoryFields>[]>([])
-  const [loading, setLoading] = useState(true)
+  const { jobCategories: jobCategoriesData, isLoading, error: jobCategoriesError, invalidateCache } = useJobCategories()
   const [error, setError] = useState<string | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
@@ -15,28 +15,25 @@ export function JobCategoriesPage() {
   const [deleting, setDeleting] = useState(false)
   const [togglingIds, setTogglingIds] = useState<Set<string>>(new Set())
 
-  useEffect(() => {
-    loadJobCategories()
-  }, [])
+  // Use job categories directly from hook
+  const jobCategories = jobCategoriesData
 
-  const loadJobCategories = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      const response = await getJobCategories()
-      setJobCategories(response.records)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load job categories')
-      console.error('Error loading job categories:', err)
-    } finally {
-      setLoading(false)
+  // Set error from hook
+  useEffect(() => {
+    if (jobCategoriesError) {
+      setError(jobCategoriesError instanceof Error ? jobCategoriesError.message : 'Failed to load job categories')
     }
-  }
+  }, [jobCategoriesError])
 
   const handleCreateJobCategory = async (fields: JobCategoryFields) => {
-    await createJobCategory(fields)
-    // Reload job categories after creating
-    await loadJobCategories()
+    try {
+      await createJobCategory(fields)
+      // Invalidate cache to force refresh
+      await invalidateCache()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create job category')
+      throw err
+    }
   }
 
   const handleToggleSelect = (id: string) => {
@@ -70,10 +67,10 @@ export function JobCategoriesPage() {
         await deleteJobCategories(idsToDelete)
       }
       
-      // Clear selection and reload
+      // Clear selection and invalidate cache
       setSelectedIds(new Set())
       setDeleteConfirm({ open: false, ids: [] })
-      await loadJobCategories()
+      await invalidateCache()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete job category(s)')
       setDeleteConfirm({ open: false, ids: [] })
@@ -94,16 +91,12 @@ export function JobCategoriesPage() {
       const newStatus = currentStatus === "Active" ? "Disabled" : "Active"
       await updateJobCategory(jobCategoryId, { Status: newStatus })
       
-      // Update local state optimistically
-      setJobCategories(prev => prev.map(jc => 
-        jc.id === jobCategoryId 
-          ? { ...jc, fields: { ...jc.fields, Status: newStatus } }
-          : jc
-      ))
+      // Invalidate cache to ensure Job Postings page sees the update
+      await invalidateCache()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update job category status')
-      // Reload to sync with server
-      await loadJobCategories()
+      // Invalidate cache to sync with server even on error
+      await invalidateCache()
     } finally {
       setTogglingIds(prev => {
         const newSet = new Set(prev)
@@ -215,7 +208,7 @@ export function JobCategoriesPage() {
           </div>
         </div>
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        {loading ? (
+        {isLoading && jobCategories.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20">
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"></div>
             <span className="mt-4 text-muted-foreground font-medium">Loading job categories...</span>
@@ -242,10 +235,10 @@ export function JobCategoriesPage() {
                 </svg>
               </div>
               <CardTitle className="text-destructive">Error Loading Job Categories</CardTitle>
-              <CardDescription className="mt-2">{error}</CardDescription>
+              <CardDescription className="mt-2">{error || (jobCategoriesError instanceof Error ? jobCategoriesError.message : 'Failed to load job categories')}</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button onClick={loadJobCategories} className="w-full" size="lg">
+              <Button onClick={() => invalidateCache()} className="w-full" size="lg">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="16"
