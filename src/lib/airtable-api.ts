@@ -123,7 +123,7 @@ export interface JobPostingFields {
   'Quyền lợi'?: string
   'Cách thức ứng tuyển'?: string
   'Hạn chót nhận'?: string // ISO 8601 date string
-  'Khu vực'?: string[] // Array of location record IDs
+  'Khu vực'?: string // Single location record ID
   'Danh mục công việc'?: string[] // Array of job category record IDs
   'Loại công việc'?: string[] // Array of job type record IDs
   'Nhóm sản phẩm'?: string[] // Array of product group record IDs

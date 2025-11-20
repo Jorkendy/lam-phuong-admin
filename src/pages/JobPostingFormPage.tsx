@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { AppLayout } from '@/components/AppLayout'
 import { Button } from '@/components/ui/button'
@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { MultiSelect } from '@/components/MultiSelect'
+import { SingleSelect } from '@/components/SingleSelect'
+import { JobPostingPreview } from '@/components/JobPostingPreview'
 import SimpleMDE from 'react-simplemde-editor'
 import 'easymde/dist/easymde.min.css'
 import ReactMarkdown from 'react-markdown'
@@ -17,12 +19,11 @@ import {
   generateUniqueJobPostingSlug,
   type JobPostingFields,
   type AirtableRecord,
-  type LocationFields,
-  type JobCategoryFields,
-  type JobTypeFields,
-  type ProductGroupFields,
 } from '@/lib/airtable-api'
-import { useLazyData } from '@/hooks/useLazyData'
+import { useLocations } from '@/hooks/useLocations'
+import { useJobCategories } from '@/hooks/useJobCategories'
+import { useJobTypes } from '@/hooks/useJobTypes'
+import { useProductGroups } from '@/hooks/useProductGroups'
 
 const simpleMDEConfig = {
   toolbar: [
@@ -55,7 +56,7 @@ export function JobPostingFormPage() {
     'Quyền lợi': '',
     'Cách thức ứng tuyển': '',
     'Hạn chót nhận': '',
-    'Khu vực': [],
+    'Khu vực': undefined,
     'Danh mục công việc': [],
     'Loại công việc': [],
     'Nhóm sản phẩm': [],
@@ -68,15 +69,28 @@ export function JobPostingFormPage() {
   const [error, setError] = useState<string | null>(null)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
 
-  // Lazy-loaded data with caching
-  const {
-    dataCache,
-    loading: lazyLoading,
-    fetchLocations,
-    fetchJobCategories,
-    fetchJobTypes,
-    fetchProductGroups,
-  } = useLazyData()
+  // Use the same hooks as the list page with 3-layer caching
+  const { locations: locationsData, isLoading: locationsLoading, error: locationsError } = useLocations()
+  const { jobCategories: jobCategoriesData, isLoading: jobCategoriesLoading, error: jobCategoriesError } = useJobCategories()
+  const { jobTypes: jobTypesData, isLoading: jobTypesLoading, error: jobTypesError } = useJobTypes()
+  const { productGroups: productGroupsData, isLoading: productGroupsLoading, error: productGroupsError } = useProductGroups()
+
+  // Filter to only active records
+  const activeLocations = useMemo(() => {
+    return locationsData.filter(loc => loc.fields.Status === 'Active')
+  }, [locationsData])
+
+  const activeJobCategories = useMemo(() => {
+    return jobCategoriesData.filter(cat => cat.fields.Status === 'Active')
+  }, [jobCategoriesData])
+
+  const activeJobTypes = useMemo(() => {
+    return jobTypesData.filter(type => type.fields.Status === 'Active')
+  }, [jobTypesData])
+
+  const activeProductGroups = useMemo(() => {
+    return productGroupsData.filter(group => group.fields.Status === 'Active')
+  }, [productGroupsData])
 
   useEffect(() => {
     if (isEditMode && id) {
@@ -104,6 +118,48 @@ export function JobPostingFormPage() {
     }
   }, [formData, isEditMode])
 
+  // Handle fetch callbacks (no-op since data is already loaded via hooks, but kept for compatibility)
+  const handleFetchLocations = useCallback(async () => {
+    if (locationsError) {
+      setError(locationsError instanceof Error ? locationsError.message : "Failed to load locations")
+    }
+  }, [locationsError])
+
+  const handleFetchJobCategories = useCallback(async () => {
+    if (jobCategoriesError) {
+      setError(jobCategoriesError instanceof Error ? jobCategoriesError.message : "Failed to load job categories")
+    }
+  }, [jobCategoriesError])
+
+  const handleFetchJobTypes = useCallback(async () => {
+    if (jobTypesError) {
+      setError(jobTypesError instanceof Error ? jobTypesError.message : "Failed to load job types")
+    }
+  }, [jobTypesError])
+
+  const handleFetchProductGroups = useCallback(async () => {
+    if (productGroupsError) {
+      setError(productGroupsError instanceof Error ? productGroupsError.message : "Failed to load product groups")
+    }
+  }, [productGroupsError])
+
+  // Error handling for data loading failures
+  useEffect(() => {
+    if (locationsError || jobCategoriesError || jobTypesError || productGroupsError) {
+      const errorMessage = 
+        locationsError ? (locationsError instanceof Error ? locationsError.message : "Failed to load locations") :
+        jobCategoriesError ? (jobCategoriesError instanceof Error ? jobCategoriesError.message : "Failed to load job categories") :
+        jobTypesError ? (jobTypesError instanceof Error ? jobTypesError.message : "Failed to load job types") :
+        productGroupsError ? (productGroupsError instanceof Error ? productGroupsError.message : "Failed to load product groups") :
+        null
+      
+      if (errorMessage && !error) {
+        // Only set error if there's no existing form error
+        console.error('Data loading error:', errorMessage)
+      }
+    }
+  }, [locationsError, jobCategoriesError, jobTypesError, productGroupsError, error])
+
 
   const loadJobPosting = async (postingId: string) => {
     try {
@@ -130,6 +186,17 @@ export function JobPostingFormPage() {
         }
       }
 
+      // Handle backward compatibility: convert array to string for Khu vực
+      let locationValue: string | undefined = undefined;
+      if (fields['Khu vực']) {
+        if (Array.isArray(fields['Khu vực'])) {
+          // Take first element if array (backward compatibility)
+          locationValue = fields['Khu vực'].length > 0 ? fields['Khu vực'][0] : undefined;
+        } else if (typeof fields['Khu vực'] === 'string') {
+          locationValue = fields['Khu vực'];
+        }
+      }
+
       const loadedFields = {
         'Tiêu đề': fields['Tiêu đề'] || '',
         'Giới thiệu': fields['Giới thiệu'] || '',
@@ -138,7 +205,7 @@ export function JobPostingFormPage() {
         'Quyền lợi': fields['Quyền lợi'] || '',
         'Cách thức ứng tuyển': fields['Cách thức ứng tuyển'] || '',
         'Hạn chót nhận': deadlineDate,
-        'Khu vực': Array.isArray(fields['Khu vực']) ? fields['Khu vực'] : [],
+        'Khu vực': locationValue,
         'Danh mục công việc': Array.isArray(fields['Danh mục công việc']) ? fields['Danh mục công việc'] : [],
         'Loại công việc': Array.isArray(fields['Loại công việc']) ? fields['Loại công việc'] : [],
         'Nhóm sản phẩm': Array.isArray(fields['Nhóm sản phẩm']) ? fields['Nhóm sản phẩm'] : [],
@@ -148,20 +215,8 @@ export function JobPostingFormPage() {
       setOriginalTitle(fields['Tiêu đề'] || '')
       setHasUnsavedChanges(false)
 
-      // Pre-fetch data for fields that have selected values (for edit mode)
-      // This ensures selected items are visible when dropdown opens
-      if (loadedFields['Khu vực'].length > 0) {
-        fetchLocations().catch(console.error)
-      }
-      if (loadedFields['Danh mục công việc'].length > 0) {
-        fetchJobCategories().catch(console.error)
-      }
-      if (loadedFields['Loại công việc'].length > 0) {
-        fetchJobTypes().catch(console.error)
-      }
-      if (loadedFields['Nhóm sản phẩm'].length > 0) {
-        fetchProductGroups().catch(console.error)
-      }
+      // Data will be loaded via hooks when MultiSelect opens
+      // The hooks use caching, so data will be available immediately if already cached
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load job posting')
     } finally {
@@ -338,7 +393,11 @@ export function JobPostingFormPage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-8">
+          {/* Form and Preview Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Form Section */}
+            <div className="space-y-8">
+              <form onSubmit={handleSubmit} className="space-y-8">
             {/* Basic Info Section */}
             <div className="bg-white rounded-lg border border-border p-6 shadow-sm">
               <h2 className="text-xl font-semibold text-foreground mb-6">Basic Info</h2>
@@ -469,25 +528,31 @@ export function JobPostingFormPage() {
             <div className="bg-white rounded-lg border border-border p-6 shadow-sm">
               <h2 className="text-xl font-semibold text-foreground mb-6">Classifications</h2>
               
+              {/* Location (Single Select) */}
+              <div className="space-y-2 mb-6">
+                <Label className="text-sm font-medium text-foreground">
+                  Khu vực
+                </Label>
+                <SingleSelect
+                  options={activeLocations.map(loc => ({
+                    id: loc.id,
+                    label: loc.fields.Name || 'Unnamed',
+                  }))}
+                  value={formData['Khu vực']}
+                  onChange={(value) => setFormData(prev => ({ ...prev, 'Khu vực': value }))}
+                  placeholder="Select a location..."
+                  disabled={saving}
+                  loading={locationsLoading}
+                  onOpen={handleFetchLocations}
+                />
+                {locationsError && (
+                  <p className="text-xs text-destructive mt-1">
+                    {locationsError instanceof Error ? locationsError.message : "Failed to load locations"}
+                  </p>
+                )}
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Locations */}
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-foreground">
-                    Khu vực
-                  </Label>
-                  <MultiSelect
-                    options={(dataCache.locations || []).map(loc => ({
-                      id: loc.id,
-                      label: loc.fields.Name || 'Unnamed',
-                    }))}
-                    value={formData['Khu vực'] || []}
-                    onChange={(value) => setFormData(prev => ({ ...prev, 'Khu vực': value }))}
-                    placeholder="Select locations..."
-                    disabled={saving}
-                    loading={lazyLoading.locations}
-                    onOpen={fetchLocations}
-                  />
-                </div>
 
                 {/* Job Categories */}
                 <div className="space-y-2">
@@ -495,7 +560,7 @@ export function JobPostingFormPage() {
                     Danh mục công việc
                   </Label>
                   <MultiSelect
-                    options={(dataCache.jobCategories || []).map(cat => ({
+                    options={activeJobCategories.map(cat => ({
                       id: cat.id,
                       label: cat.fields.Name || 'Unnamed',
                     }))}
@@ -503,9 +568,14 @@ export function JobPostingFormPage() {
                     onChange={(value) => setFormData(prev => ({ ...prev, 'Danh mục công việc': value }))}
                     placeholder="Select categories..."
                     disabled={saving}
-                    loading={lazyLoading.jobCategories}
-                    onOpen={fetchJobCategories}
+                    loading={jobCategoriesLoading}
+                    onOpen={handleFetchJobCategories}
                   />
+                  {jobCategoriesError && (
+                    <p className="text-xs text-destructive mt-1">
+                      {jobCategoriesError instanceof Error ? jobCategoriesError.message : "Failed to load job categories"}
+                    </p>
+                  )}
                 </div>
 
                 {/* Job Types */}
@@ -514,7 +584,7 @@ export function JobPostingFormPage() {
                     Loại công việc
                   </Label>
                   <MultiSelect
-                    options={(dataCache.jobTypes || []).map(type => ({
+                    options={activeJobTypes.map(type => ({
                       id: type.id,
                       label: type.fields.Name || 'Unnamed',
                     }))}
@@ -522,9 +592,14 @@ export function JobPostingFormPage() {
                     onChange={(value) => setFormData(prev => ({ ...prev, 'Loại công việc': value }))}
                     placeholder="Select types..."
                     disabled={saving}
-                    loading={lazyLoading.jobTypes}
-                    onOpen={fetchJobTypes}
+                    loading={jobTypesLoading}
+                    onOpen={handleFetchJobTypes}
                   />
+                  {jobTypesError && (
+                    <p className="text-xs text-destructive mt-1">
+                      {jobTypesError instanceof Error ? jobTypesError.message : "Failed to load job types"}
+                    </p>
+                  )}
                 </div>
 
                 {/* Product Groups */}
@@ -533,7 +608,7 @@ export function JobPostingFormPage() {
                     Nhóm sản phẩm
                   </Label>
                   <MultiSelect
-                    options={(dataCache.productGroups || []).map(group => ({
+                    options={activeProductGroups.map(group => ({
                       id: group.id,
                       label: group.fields.Name || 'Unnamed',
                     }))}
@@ -541,45 +616,63 @@ export function JobPostingFormPage() {
                     onChange={(value) => setFormData(prev => ({ ...prev, 'Nhóm sản phẩm': value }))}
                     placeholder="Select product groups..."
                     disabled={saving}
-                    loading={lazyLoading.productGroups}
-                    onOpen={fetchProductGroups}
+                    loading={productGroupsLoading}
+                    onOpen={handleFetchProductGroups}
                   />
+                  {productGroupsError && (
+                    <p className="text-xs text-destructive mt-1">
+                      {productGroupsError instanceof Error ? productGroupsError.message : "Failed to load product groups"}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex justify-end gap-3 pb-8">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={handleCancel}
-                disabled={saving}
-                className="px-6"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={saving || generatingSlug || !formData['Tiêu đề']?.trim()}
-                className="px-6 bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                {generatingSlug ? (
-                  <span className="flex items-center gap-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent"></div>
-                    <span>Generating slug...</span>
-                  </span>
-                ) : saving ? (
-                  <span className="flex items-center gap-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent"></div>
-                    <span>Saving...</span>
-                  </span>
-                ) : (
-                  'Save'
-                )}
-              </Button>
+                {/* Action Buttons */}
+                <div className="flex justify-end gap-3 pb-8">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={handleCancel}
+                    disabled={saving}
+                    className="px-6"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={saving || generatingSlug || !formData['Tiêu đề']?.trim()}
+                    className="px-6 bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    {generatingSlug ? (
+                      <span className="flex items-center gap-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent"></div>
+                        <span>Generating slug...</span>
+                      </span>
+                    ) : saving ? (
+                      <span className="flex items-center gap-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent"></div>
+                        <span>Saving...</span>
+                      </span>
+                    ) : (
+                      'Save'
+                    )}
+                  </Button>
+                </div>
+              </form>
             </div>
-          </form>
+
+            {/* Preview Section */}
+            <div className="lg:sticky lg:top-8 lg:h-[calc(100vh-100px)]">
+              <JobPostingPreview
+                formData={formData}
+                locations={activeLocations}
+                jobCategories={activeJobCategories}
+                jobTypes={activeJobTypes}
+                productGroups={activeProductGroups}
+              />
+            </div>
+          </div>
         </div>
       </div>
     </AppLayout>

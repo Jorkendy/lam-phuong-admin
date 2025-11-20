@@ -112,4 +112,262 @@
     border-color: #2563eb !important;
     box-shadow: 0 4px 6px rgba(59, 130, 246, 0.4) !important;
   }
+
+  /* Markdown list styling for prose sections and markdown-content */
+  .prose ul,
+  .prose ol,
+  .markdown-content ul,
+  .markdown-content ol {
+    list-style: revert;
+    padding-left: 1.5rem;
+    margin-top: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .prose ul,
+  .markdown-content ul {
+    list-style-type: disc;
+  }
+
+  .prose ol,
+  .markdown-content ol {
+    list-style-type: decimal;
+  }
+
+  .prose li,
+  .markdown-content li {
+    margin-top: 0.25rem;
+    margin-bottom: 0.25rem;
+    padding-left: 0.25rem;
+    display: list-item;
+  }
+
+  /* Nested unordered lists */
+  .prose ul ul,
+  .prose ol ul,
+  .markdown-content ul ul,
+  .markdown-content ol ul {
+    list-style-type: circle;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+    padding-left: 1.5rem;
+  }
+
+  .prose ul ul ul,
+  .prose ol ul ul,
+  .markdown-content ul ul ul,
+  .markdown-content ol ul ul {
+    list-style-type: square;
+  }
+
+  /* Nested ordered lists */
+  .prose ol ol,
+  .prose ul ol,
+  .markdown-content ol ol,
+  .markdown-content ul ol {
+    list-style-type: lower-alpha;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+    padding-left: 1.5rem;
+  }
+
+  .prose ol ol ol,
+  .prose ul ol ol,
+  .markdown-content ol ol ol,
+  .markdown-content ul ol ol {
+    list-style-type: lower-roman;
+  }
+
+  /* Ensure list items have proper spacing */
+  .prose li > p,
+  .markdown-content li > p {
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .prose li > p:first-child,
+  .markdown-content li > p:first-child {
+    margin-top: 0;
+  }
+
+  .prose li > p:last-child,
+  .markdown-content li > p:last-child {
+    margin-bottom: 0;
+  }
+
+  /* Nested list spacing */
+  .prose li > ul,
+  .prose li > ol,
+  .markdown-content li > ul,
+  .markdown-content li > ol {
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Ensure lists are visible and properly styled */
+  .prose ul[class*="list-"],
+  .prose ol[class*="list-"],
+  .markdown-content ul[class*="list-"],
+  .markdown-content ol[class*="list-"] {
+    display: block;
+    list-style-position: outside;
+  }
+
+  /* EasyMDE/SimpleMDE preview mode styling */
+  .editor-preview,
+  .editor-preview-side {
+    padding: 1rem;
+    background-color: white;
+    color: hsl(var(--foreground));
+  }
+
+  /* Lists in EasyMDE preview */
+  .editor-preview ul,
+  .editor-preview-side ul,
+  .editor-preview ol,
+  .editor-preview-side ol {
+    list-style: revert !important;
+    padding-left: 1.5rem !important;
+    margin-top: 0.75rem !important;
+    margin-bottom: 0.75rem !important;
+    display: block !important;
+  }
+
+  .editor-preview ul,
+  .editor-preview-side ul {
+    list-style-type: disc !important;
+  }
+
+  .editor-preview ol,
+  .editor-preview-side ol {
+    list-style-type: decimal !important;
+  }
+
+  .editor-preview li,
+  .editor-preview-side li {
+    margin-top: 0.25rem !important;
+    margin-bottom: 0.25rem !important;
+    padding-left: 0.25rem !important;
+    display: list-item !important;
+    list-style-position: outside !important;
+  }
+
+  /* Nested lists in EasyMDE preview */
+  .editor-preview ul ul,
+  .editor-preview ol ul,
+  .editor-preview-side ul ul,
+  .editor-preview-side ol ul {
+    list-style-type: circle !important;
+    margin-top: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+    padding-left: 1.5rem !important;
+  }
+
+  .editor-preview ul ul ul,
+  .editor-preview ol ul ul,
+  .editor-preview-side ul ul ul,
+  .editor-preview-side ol ul ul {
+    list-style-type: square !important;
+  }
+
+  .editor-preview ol ol,
+  .editor-preview ul ol,
+  .editor-preview-side ol ol,
+  .editor-preview-side ul ol {
+    list-style-type: lower-alpha !important;
+    margin-top: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+    padding-left: 1.5rem !important;
+  }
+
+  .editor-preview ol ol ol,
+  .editor-preview ul ol ol,
+  .editor-preview-side ol ol ol,
+  .editor-preview-side ul ol ol {
+    list-style-type: lower-roman !important;
+  }
+
+  /* Ensure list items have proper spacing in preview */
+  .editor-preview li > p,
+  .editor-preview-side li > p {
+    margin-top: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  .editor-preview li > p:first-child,
+  .editor-preview-side li > p:first-child {
+    margin-top: 0 !important;
+  }
+
+  .editor-preview li > p:last-child,
+  .editor-preview-side li > p:last-child {
+    margin-bottom: 0 !important;
+  }
+
+  .editor-preview li > ul,
+  .editor-preview li > ol,
+  .editor-preview-side li > ul,
+  .editor-preview-side li > ol {
+    margin-top: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  /* Paragraphs and other elements in EasyMDE preview */
+  .editor-preview p,
+  .editor-preview-side p {
+    margin-top: 0.75rem;
+    margin-bottom: 0.75rem;
+    line-height: 1.6;
+  }
+
+  .editor-preview h1,
+  .editor-preview-side h1 {
+    font-size: 1.875rem;
+    font-weight: 700;
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .editor-preview h2,
+  .editor-preview-side h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-top: 1.25rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .editor-preview h3,
+  .editor-preview-side h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .editor-preview strong,
+  .editor-preview-side strong {
+    font-weight: 600;
+  }
+
+  .editor-preview em,
+  .editor-preview-side em {
+    font-style: italic;
+  }
+
+  .editor-preview code,
+  .editor-preview-side code {
+    background-color: hsl(var(--muted));
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    font-family: monospace;
+  }
+
+  .editor-preview blockquote,
+  .editor-preview-side blockquote {
+    border-left: 4px solid hsl(var(--muted));
+    padding-left: 1rem;
+    margin: 1rem 0;
+    font-style: italic;
+  }
 }

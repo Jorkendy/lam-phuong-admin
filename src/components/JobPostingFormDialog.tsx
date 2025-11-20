@@ -1,21 +1,20 @@
-import { useState, useEffect, type FormEvent } from "react";
+import { useState, useEffect, useCallback, useMemo, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { MultiSelect } from "@/components/MultiSelect";
+import { SingleSelect } from "@/components/SingleSelect";
+import { JobPostingPreview } from "@/components/JobPostingPreview";
 import { 
   type JobPostingFields, 
   generateUniqueJobPostingSlug,
-  getLocations,
-  getJobCategories,
-  getJobTypes,
-  getProductGroups,
   type AirtableRecord,
-  type LocationFields,
-  type JobCategoryFields,
-  type JobTypeFields,
-  type ProductGroupFields
 } from "@/lib/airtable-api";
+import { useLocations } from "@/hooks/useLocations";
+import { useJobCategories } from "@/hooks/useJobCategories";
+import { useJobTypes } from "@/hooks/useJobTypes";
+import { useProductGroups } from "@/hooks/useProductGroups";
 
 interface JobPostingFormDialogProps {
   open: boolean;
@@ -38,7 +37,7 @@ export function JobPostingFormDialog({
     'Quyền lợi': "",
     'Cách thức ứng tuyển': "",
     'Hạn chót nhận': "",
-    'Khu vực': [],
+    'Khu vực': undefined,
     'Danh mục công việc': [],
     'Loại công việc': [],
     'Nhóm sản phẩm': [],
@@ -46,16 +45,53 @@ export function JobPostingFormDialog({
   const [loading, setLoading] = useState(false);
   const [generatingSlug, setGeneratingSlug] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'form' | 'preview'>('form');
   
-  // Options for multi-selects
-  const [locations, setLocations] = useState<AirtableRecord<LocationFields>[]>([]);
-  const [jobCategories, setJobCategories] = useState<AirtableRecord<JobCategoryFields>[]>([]);
-  const [jobTypes, setJobTypes] = useState<AirtableRecord<JobTypeFields>[]>([]);
-  const [productGroups, setProductGroups] = useState<AirtableRecord<ProductGroupFields>[]>([]);
+  // Use the same hooks as the list page with 3-layer caching
+  const { locations: locationsData, isLoading: locationsLoading, error: locationsError } = useLocations();
+  const { jobCategories: jobCategoriesData, isLoading: jobCategoriesLoading, error: jobCategoriesError } = useJobCategories();
+  const { jobTypes: jobTypesData, isLoading: jobTypesLoading, error: jobTypesError } = useJobTypes();
+  const { productGroups: productGroupsData, isLoading: productGroupsLoading, error: productGroupsError } = useProductGroups();
+
+  // Filter to only active records
+  const activeLocations = useMemo(() => {
+    return locationsData.filter(loc => loc.fields.Status === 'Active');
+  }, [locationsData]);
+
+  const activeJobCategories = useMemo(() => {
+    return jobCategoriesData.filter(cat => cat.fields.Status === 'Active');
+  }, [jobCategoriesData]);
+
+  const activeJobTypes = useMemo(() => {
+    return jobTypesData.filter(type => type.fields.Status === 'Active');
+  }, [jobTypesData]);
+
+  const activeProductGroups = useMemo(() => {
+    return productGroupsData.filter(group => group.fields.Status === 'Active');
+  }, [productGroupsData]);
+
+  // Pre-fetch data for fields that have selected values (for edit mode)
+  useEffect(() => {
+    if (open && editingPosting) {
+      const fields = editingPosting.fields;
+      // Pre-load data if there are selected values to ensure they're visible
+      if (Array.isArray(fields['Khu vực']) && fields['Khu vực'].length > 0 && activeLocations.length === 0) {
+        // Data will be loaded via hook when MultiSelect opens
+      }
+      if (Array.isArray(fields['Danh mục công việc']) && fields['Danh mục công việc'].length > 0 && activeJobCategories.length === 0) {
+        // Data will be loaded via hook when MultiSelect opens
+      }
+      if (Array.isArray(fields['Loại công việc']) && fields['Loại công việc'].length > 0 && activeJobTypes.length === 0) {
+        // Data will be loaded via hook when MultiSelect opens
+      }
+      if (Array.isArray(fields['Nhóm sản phẩm']) && fields['Nhóm sản phẩm'].length > 0 && activeProductGroups.length === 0) {
+        // Data will be loaded via hook when MultiSelect opens
+      }
+    }
+  }, [open, editingPosting, activeLocations.length, activeJobCategories.length, activeJobTypes.length, activeProductGroups.length]);
 
   useEffect(() => {
     if (open) {
-      loadOptions();
       if (editingPosting) {
         // Populate form with editing data
         const fields = editingPosting.fields;
@@ -72,6 +108,17 @@ export function JobPostingFormDialog({
           }
         }
         
+        // Handle backward compatibility: convert array to string for Khu vực
+        let locationValue: string | undefined = undefined;
+        if (fields['Khu vực']) {
+          if (Array.isArray(fields['Khu vực'])) {
+            // Take first element if array (backward compatibility)
+            locationValue = fields['Khu vực'].length > 0 ? fields['Khu vực'][0] : undefined;
+          } else if (typeof fields['Khu vực'] === 'string') {
+            locationValue = fields['Khu vực'];
+          }
+        }
+        
         setFormData({
           'Tiêu đề': fields['Tiêu đề'] || "",
           'Giới thiệu': fields['Giới thiệu'] || "",
@@ -80,7 +127,7 @@ export function JobPostingFormDialog({
           'Quyền lợi': fields['Quyền lợi'] || "",
           'Cách thức ứng tuyển': fields['Cách thức ứng tuyển'] || "",
           'Hạn chót nhận': deadlineDate,
-          'Khu vực': Array.isArray(fields['Khu vực']) ? fields['Khu vực'] : [],
+          'Khu vực': locationValue,
           'Danh mục công việc': Array.isArray(fields['Danh mục công việc']) ? fields['Danh mục công việc'] : [],
           'Loại công việc': Array.isArray(fields['Loại công việc']) ? fields['Loại công việc'] : [],
           'Nhóm sản phẩm': Array.isArray(fields['Nhóm sản phẩm']) ? fields['Nhóm sản phẩm'] : [],
@@ -95,7 +142,7 @@ export function JobPostingFormDialog({
           'Quyền lợi': "",
           'Cách thức ứng tuyển': "",
           'Hạn chót nhận': "",
-          'Khu vực': [],
+          'Khu vực': undefined,
           'Danh mục công việc': [],
           'Loại công việc': [],
           'Nhóm sản phẩm': [],
@@ -104,22 +151,30 @@ export function JobPostingFormDialog({
     }
   }, [open, editingPosting]);
 
-  const loadOptions = async () => {
-    try {
-      const [locationsRes, categoriesRes, typesRes, groupsRes] = await Promise.all([
-        getLocations(),
-        getJobCategories(),
-        getJobTypes(),
-        getProductGroups(),
-      ]);
-      setLocations(locationsRes.records.filter(loc => loc.fields.Status === "Active"));
-      setJobCategories(categoriesRes.records.filter(cat => cat.fields.Status === "Active"));
-      setJobTypes(typesRes.records.filter(type => type.fields.Status === "Active"));
-      setProductGroups(groupsRes.records.filter(group => group.fields.Status === "Active"));
-    } catch (err) {
-      console.error('Error loading options:', err);
+  // Handle fetch callbacks (no-op since data is already loaded via hooks, but kept for compatibility)
+  const handleFetchLocations = useCallback(async () => {
+    if (locationsError) {
+      setError(locationsError instanceof Error ? locationsError.message : "Failed to load locations");
     }
-  };
+  }, [locationsError]);
+
+  const handleFetchJobCategories = useCallback(async () => {
+    if (jobCategoriesError) {
+      setError(jobCategoriesError instanceof Error ? jobCategoriesError.message : "Failed to load job categories");
+    }
+  }, [jobCategoriesError]);
+
+  const handleFetchJobTypes = useCallback(async () => {
+    if (jobTypesError) {
+      setError(jobTypesError instanceof Error ? jobTypesError.message : "Failed to load job types");
+    }
+  }, [jobTypesError]);
+
+  const handleFetchProductGroups = useCallback(async () => {
+    if (productGroupsError) {
+      setError(productGroupsError instanceof Error ? productGroupsError.message : "Failed to load product groups");
+    }
+  }, [productGroupsError]);
 
   if (!open) return null;
 
@@ -176,7 +231,7 @@ export function JobPostingFormDialog({
         'Quyền lợi': "",
         'Cách thức ứng tuyển': "",
         'Hạn chót nhận': "",
-        'Khu vực': [],
+        'Khu vực': undefined,
         'Danh mục công việc': [],
         'Loại công việc': [],
         'Nhóm sản phẩm': [],
@@ -191,15 +246,22 @@ export function JobPostingFormDialog({
     }
   };
 
-  const handleMultiSelect = (field: keyof JobPostingFields, value: string) => {
-    setFormData(prev => {
-      const current = (prev[field] as string[]) || [];
-      const newValue = current.includes(value)
-        ? current.filter(id => id !== value)
-        : [...current, value];
-      return { ...prev, [field]: newValue };
-    });
-  };
+  // Error handling for data loading failures
+  useEffect(() => {
+    if (locationsError || jobCategoriesError || jobTypesError || productGroupsError) {
+      const errorMessage = 
+        locationsError ? (locationsError instanceof Error ? locationsError.message : "Failed to load locations") :
+        jobCategoriesError ? (jobCategoriesError instanceof Error ? jobCategoriesError.message : "Failed to load job categories") :
+        jobTypesError ? (jobTypesError instanceof Error ? jobTypesError.message : "Failed to load job types") :
+        productGroupsError ? (productGroupsError instanceof Error ? productGroupsError.message : "Failed to load product groups") :
+        null;
+      
+      if (errorMessage && !error) {
+        // Only set error if there's no existing form error
+        console.error('Data loading error:', errorMessage);
+      }
+    }
+  }, [locationsError, jobCategoriesError, jobTypesError, productGroupsError, error]);
 
   return (
     <div
@@ -246,10 +308,37 @@ export function JobPostingFormDialog({
               </p>
             </div>
           </div>
+          
+          {/* Tabs */}
+          <div className="flex gap-2 mt-4 border-b border-border">
+            <button
+              type="button"
+              onClick={() => setActiveTab('form')}
+              className={`px-4 py-2 text-sm font-medium transition-colors ${
+                activeTab === 'form'
+                  ? 'text-primary border-b-2 border-primary'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Form
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('preview')}
+              className={`px-4 py-2 text-sm font-medium transition-colors ${
+                activeTab === 'preview'
+                  ? 'text-primary border-b-2 border-primary'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Preview
+            </button>
+          </div>
         </div>
 
-        {/* Form Content */}
-        <form onSubmit={handleSubmit} className="px-6 pb-6">
+        {/* Form Content or Preview */}
+        {activeTab === 'form' ? (
+          <form onSubmit={handleSubmit} className="px-6 pb-6">
           <div className="space-y-5 max-h-[calc(100vh-200px)] overflow-y-auto py-6">
             {/* Title */}
             <div className="space-y-3">
@@ -360,60 +449,55 @@ export function JobPostingFormDialog({
               />
             </div>
 
+            {/* Location (Single Select) */}
+            <div className="space-y-3">
+              <Label className="text-sm font-medium text-foreground">
+                Khu vực
+              </Label>
+              <SingleSelect
+                options={activeLocations.map(loc => ({
+                  id: loc.id,
+                  label: loc.fields.Name || 'Unnamed',
+                }))}
+                value={formData['Khu vực']}
+                onChange={(value) => setFormData(prev => ({ ...prev, 'Khu vực': value }))}
+                placeholder="Select a location..."
+                disabled={loading}
+                loading={locationsLoading}
+                onOpen={handleFetchLocations}
+              />
+              {locationsError && (
+                <p className="text-xs text-destructive mt-1">
+                  {locationsError instanceof Error ? locationsError.message : "Failed to load locations"}
+                </p>
+              )}
+            </div>
+
             {/* Multi-selects */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Locations */}
-              <div className="space-y-3">
-                <Label className="text-sm font-medium text-foreground">
-                  Khu vực
-                </Label>
-                <div className="border border-input rounded-md p-3 max-h-40 overflow-y-auto bg-background">
-                  {locations.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No active locations available</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {locations.map((location) => (
-                        <label key={location.id} className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 p-1 rounded">
-                          <input
-                            type="checkbox"
-                            checked={(formData['Khu vực'] || []).includes(location.id)}
-                            onChange={() => handleMultiSelect('Khu vực', location.id)}
-                            disabled={loading}
-                            className="w-4 h-4 rounded"
-                          />
-                          <span className="text-sm">{location.fields.Name || 'Unnamed'}</span>
-                        </label>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
 
               {/* Job Categories */}
               <div className="space-y-3">
                 <Label className="text-sm font-medium text-foreground">
                   Danh mục công việc
                 </Label>
-                <div className="border border-input rounded-md p-3 max-h-40 overflow-y-auto bg-background">
-                  {jobCategories.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No active categories available</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {jobCategories.map((category) => (
-                        <label key={category.id} className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 p-1 rounded">
-                          <input
-                            type="checkbox"
-                            checked={(formData['Danh mục công việc'] || []).includes(category.id)}
-                            onChange={() => handleMultiSelect('Danh mục công việc', category.id)}
-                            disabled={loading}
-                            className="w-4 h-4 rounded"
-                          />
-                          <span className="text-sm">{category.fields.Name || 'Unnamed'}</span>
-                        </label>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <MultiSelect
+                  options={activeJobCategories.map(cat => ({
+                    id: cat.id,
+                    label: cat.fields.Name || 'Unnamed',
+                  }))}
+                  value={formData['Danh mục công việc'] || []}
+                  onChange={(value) => setFormData(prev => ({ ...prev, 'Danh mục công việc': value }))}
+                  placeholder="Select categories..."
+                  disabled={loading}
+                  loading={jobCategoriesLoading}
+                  onOpen={handleFetchJobCategories}
+                />
+                {jobCategoriesError && (
+                  <p className="text-xs text-destructive mt-1">
+                    {jobCategoriesError instanceof Error ? jobCategoriesError.message : "Failed to load job categories"}
+                  </p>
+                )}
               </div>
 
               {/* Job Types */}
@@ -421,26 +505,23 @@ export function JobPostingFormDialog({
                 <Label className="text-sm font-medium text-foreground">
                   Loại công việc
                 </Label>
-                <div className="border border-input rounded-md p-3 max-h-40 overflow-y-auto bg-background">
-                  {jobTypes.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No active types available</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {jobTypes.map((type) => (
-                        <label key={type.id} className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 p-1 rounded">
-                          <input
-                            type="checkbox"
-                            checked={(formData['Loại công việc'] || []).includes(type.id)}
-                            onChange={() => handleMultiSelect('Loại công việc', type.id)}
-                            disabled={loading}
-                            className="w-4 h-4 rounded"
-                          />
-                          <span className="text-sm">{type.fields.Name || 'Unnamed'}</span>
-                        </label>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <MultiSelect
+                  options={activeJobTypes.map(type => ({
+                    id: type.id,
+                    label: type.fields.Name || 'Unnamed',
+                  }))}
+                  value={formData['Loại công việc'] || []}
+                  onChange={(value) => setFormData(prev => ({ ...prev, 'Loại công việc': value }))}
+                  placeholder="Select types..."
+                  disabled={loading}
+                  loading={jobTypesLoading}
+                  onOpen={handleFetchJobTypes}
+                />
+                {jobTypesError && (
+                  <p className="text-xs text-destructive mt-1">
+                    {jobTypesError instanceof Error ? jobTypesError.message : "Failed to load job types"}
+                  </p>
+                )}
               </div>
 
               {/* Product Groups */}
@@ -448,26 +529,23 @@ export function JobPostingFormDialog({
                 <Label className="text-sm font-medium text-foreground">
                   Nhóm sản phẩm
                 </Label>
-                <div className="border border-input rounded-md p-3 max-h-40 overflow-y-auto bg-background">
-                  {productGroups.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No active groups available</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {productGroups.map((group) => (
-                        <label key={group.id} className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 p-1 rounded">
-                          <input
-                            type="checkbox"
-                            checked={(formData['Nhóm sản phẩm'] || []).includes(group.id)}
-                            onChange={() => handleMultiSelect('Nhóm sản phẩm', group.id)}
-                            disabled={loading}
-                            className="w-4 h-4 rounded"
-                          />
-                          <span className="text-sm">{group.fields.Name || 'Unnamed'}</span>
-                        </label>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <MultiSelect
+                  options={activeProductGroups.map(group => ({
+                    id: group.id,
+                    label: group.fields.Name || 'Unnamed',
+                  }))}
+                  value={formData['Nhóm sản phẩm'] || []}
+                  onChange={(value) => setFormData(prev => ({ ...prev, 'Nhóm sản phẩm': value }))}
+                  placeholder="Select product groups..."
+                  disabled={loading}
+                  loading={productGroupsLoading}
+                  onOpen={handleFetchProductGroups}
+                />
+                {productGroupsError && (
+                  <p className="text-xs text-destructive mt-1">
+                    {productGroupsError instanceof Error ? productGroupsError.message : "Failed to load product groups"}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -548,6 +626,19 @@ export function JobPostingFormDialog({
             </Button>
           </div>
         </form>
+        ) : (
+          <div className="px-6 pb-6">
+            <div className="max-h-[calc(100vh-300px)] overflow-y-auto py-6">
+              <JobPostingPreview
+                formData={formData}
+                locations={activeLocations}
+                jobCategories={activeJobCategories}
+                jobTypes={activeJobTypes}
+                productGroups={activeProductGroups}
+              />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
