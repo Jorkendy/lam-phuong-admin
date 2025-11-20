@@ -17,9 +17,11 @@ import { useProductGroups } from "@/hooks/useProductGroups";
 import {
   getJobPostings,
   deleteJobPosting,
+  updateJobPosting,
   type JobPostingFields,
   type AirtableRecord,
 } from "@/lib/airtable-api";
+import { JobStatusBadge } from "@/components/JobStatusBadge";
 
 interface JobPostingRecord extends AirtableRecord<JobPostingFields> {
   fields: JobPostingFields & {
@@ -43,45 +45,6 @@ function isDeadlineExpired(deadline: string | undefined): boolean {
 // Helper function to check if status is pending (null/undefined/empty)
 function isStatusPending(status: string | undefined | null): boolean {
   return !status || status.trim() === "";
-}
-
-// Helper function to determine status badge
-function getStatusBadge(
-  status: string | undefined | null,
-  deadline: string | undefined
-): { label: string; color: string; bgColor: string } {
-  // Expired takes priority - if deadline has passed, show Expired
-  if (isDeadlineExpired(deadline)) {
-    return {
-      label: "Expired",
-      color: "text-red-700",
-      bgColor: "bg-red-100",
-    };
-  }
-
-  // Check status field
-  if (status === "Approved") {
-    return {
-      label: "Approved",
-      color: "text-green-700",
-      bgColor: "bg-green-100",
-    };
-  }
-
-  if (status === "Reject") {
-    return {
-      label: "Rejected",
-      color: "text-red-700",
-      bgColor: "bg-red-100",
-    };
-  }
-
-  // Pending (null/undefined/empty)
-  return {
-    label: "Pending",
-    color: "text-yellow-700",
-    bgColor: "bg-yellow-100",
-  };
 }
 
 // Helper function to format date
@@ -151,6 +114,7 @@ export function JobPostingsPage() {
   const [selectedJobTypes, setSelectedJobTypes] = useState<string[]>([]);
   const [selectedProductGroups, setSelectedProductGroups] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [updatingStatusIds, setUpdatingStatusIds] = useState<Set<string>>(new Set());
   const [locationFetchError, setLocationFetchError] = useState<string | null>(null);
   const [categoryFetchError, setCategoryFetchError] = useState<string | null>(null);
   const [jobTypeFetchError, setJobTypeFetchError] = useState<string | null>(null);
@@ -374,20 +338,24 @@ export function JobPostingsPage() {
       const matchesStatus = (() => {
         if (statusFilter === "all") return true;
 
-        const status = posting.fields.Status;
+        const status = posting.fields.Status || "Pending"; // Default to Pending for legacy entries
         const deadline = posting.fields["Hạn chót nhận"];
 
         switch (statusFilter) {
+          case "draft":
+            // Status field === "Draft"
+            return status === "Draft";
+          
           case "approved":
             // Status field === "Approved" (including expired ones)
             return status === "Approved";
           
           case "rejected":
-            // Status field === "Reject"
-            return status === "Reject";
+            // Status field === "Rejected" or "Reject"
+            return status === "Rejected" || status === "Reject";
           
           case "pending":
-            // Status field is null/undefined/empty
+            // Status field is null/undefined/empty (legacy pending)
             return isStatusPending(status);
           
           case "active":
@@ -553,6 +521,37 @@ export function JobPostingsPage() {
   const handleDeleteCancel = () => {
     setDeleteConfirm({ open: false, ids: [] });
   };
+
+  const handleStatusChange = async (postingId: string, newStatus: string) => {
+    setUpdatingStatusIds((prev) => new Set(prev).add(postingId))
+    
+    try {
+      await updateJobPosting(postingId, { Status: newStatus })
+      
+      // Update local state
+      setJobPostings((prev) =>
+        prev.map((posting) =>
+          posting.id === postingId
+            ? { ...posting, fields: { ...posting.fields, Status: newStatus } }
+            : posting
+        )
+      )
+    } catch (err) {
+      console.error('Error updating status:', err)
+      alert(
+        err instanceof Error
+          ? err.message
+          : 'Failed to update job opening status'
+      )
+      throw err // Re-throw so JobStatusBadge can handle it
+    } finally {
+      setUpdatingStatusIds((prev) => {
+        const next = new Set(prev)
+        next.delete(postingId)
+        return next
+      })
+    }
+  }
 
   const allSelected =
     filteredJobPostings.length > 0 &&
@@ -840,10 +839,11 @@ export function JobPostingsPage() {
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm md:text-base h-12 cursor-pointer hover:border-gray-400"
                     >
                       <option value="all">All Status / Tất cả trạng thái</option>
-                      <option value="active">Active / Đang hoạt động</option>
-                      <option value="approved">Approved / Đã duyệt</option>
+                      <option value="draft">Draft / Nháp</option>
                       <option value="pending">Pending / Chờ duyệt</option>
+                      <option value="approved">Approved / Đã duyệt</option>
                       <option value="rejected">Rejected / Từ chối</option>
+                      <option value="active">Active / Đang hoạt động</option>
                       <option value="expired">Expired / Hết hạn</option>
                     </select>
                   </div>
@@ -1517,10 +1517,6 @@ export function JobPostingsPage() {
                   {/* Job Openings Grid */}
                   <div className="grid gap-6 sm:gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                     {filteredJobPostings.map((posting) => {
-                  const statusBadge = getStatusBadge(
-                    posting.fields.Status,
-                    posting.fields["Hạn chót nhận"]
-                  );
                   const relativeDate = getRelativeDate(
                     posting.fields["Hạn chót nhận"]
                   );
@@ -1654,12 +1650,14 @@ export function JobPostingsPage() {
 
                         {/* Status and Deadline Row */}
                         <div className="flex items-center gap-3 mb-4">
-                          {/* Status Badge */}
-                          <span
-                            className={`px-2.5 py-1 rounded-md text-xs font-medium ${statusBadge.bgColor} ${statusBadge.color}`}
-                          >
-                            {statusBadge.label}
-                          </span>
+                          {/* Status Badge - Interactive */}
+                          <JobStatusBadge
+                            status={posting.fields.Status}
+                            deadline={posting.fields["Hạn chót nhận"]}
+                            postingId={posting.id}
+                            onStatusChange={handleStatusChange}
+                            updating={updatingStatusIds.has(posting.id)}
+                          />
 
                           {/* Deadline */}
                           {posting.fields["Hạn chót nhận"] && (

@@ -314,6 +314,8 @@ export function JobPostingFormPage() {
         ...formData,
         Slug: uniqueSlug,
         'Hạn chót nhận': deadlineDate,
+        // Set default status to Draft for new job openings
+        Status: isEditMode ? formData.Status : (formData.Status || 'Draft'),
       }
 
       if (isEditMode && id) {
