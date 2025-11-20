@@ -30,39 +30,57 @@ interface JobPostingRecord extends AirtableRecord<JobPostingFields> {
   };
 }
 
-// Helper function to determine status badge
-function getStatusBadge(
-  status: string | undefined,
-  deadline: string | undefined
-): { label: string; color: string; bgColor: string } {
+// Helper function to check if deadline has passed
+function isDeadlineExpired(deadline: string | undefined): boolean {
+  if (!deadline) return false;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+  const deadlineDate = new Date(deadline);
+  deadlineDate.setHours(0, 0, 0, 0);
+  return deadlineDate < today;
+}
 
-  if (deadline) {
-    const deadlineDate = new Date(deadline);
-    deadlineDate.setHours(0, 0, 0, 0);
+// Helper function to check if status is pending (null/undefined/empty)
+function isStatusPending(status: string | undefined | null): boolean {
+  return !status || status.trim() === "";
+}
 
-    if (deadlineDate < today) {
-      return {
-        label: "Expired",
-        color: "text-red-700",
-        bgColor: "bg-red-100",
-      };
-    }
+// Helper function to determine status badge
+function getStatusBadge(
+  status: string | undefined | null,
+  deadline: string | undefined
+): { label: string; color: string; bgColor: string } {
+  // Expired takes priority - if deadline has passed, show Expired
+  if (isDeadlineExpired(deadline)) {
+    return {
+      label: "Expired",
+      color: "text-red-700",
+      bgColor: "bg-red-100",
+    };
   }
 
+  // Check status field
   if (status === "Approved") {
     return {
-      label: "Active",
+      label: "Approved",
       color: "text-green-700",
       bgColor: "bg-green-100",
     };
   }
 
+  if (status === "Reject") {
+    return {
+      label: "Rejected",
+      color: "text-red-700",
+      bgColor: "bg-red-100",
+    };
+  }
+
+  // Pending (null/undefined/empty)
   return {
-    label: "Draft",
-    color: "text-gray-700",
-    bgColor: "bg-gray-100",
+    label: "Pending",
+    color: "text-yellow-700",
+    bgColor: "bg-yellow-100",
   };
 }
 
@@ -109,14 +127,9 @@ function isDeadlineNear(dateString: string | undefined): boolean {
   return diffDays >= 0 && diffDays <= 7;
 }
 
-// Helper function to check if deadline has passed
+// Helper function to check if deadline has passed (alias for consistency)
 function isDeadlinePassed(dateString: string | undefined): boolean {
-  if (!dateString) return false;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const deadlineDate = new Date(dateString);
-  deadlineDate.setHours(0, 0, 0, 0);
-  return deadlineDate < today;
+  return isDeadlineExpired(dateString);
 }
 
 export function JobPostingsPage() {
@@ -137,6 +150,7 @@ export function JobPostingsPage() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedJobTypes, setSelectedJobTypes] = useState<string[]>([]);
   const [selectedProductGroups, setSelectedProductGroups] = useState<string[]>([]);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [locationFetchError, setLocationFetchError] = useState<string | null>(null);
   const [categoryFetchError, setCategoryFetchError] = useState<string | null>(null);
   const [jobTypeFetchError, setJobTypeFetchError] = useState<string | null>(null);
@@ -295,7 +309,7 @@ export function JobPostingsPage() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // Optimized filtering with useMemo (search AND location AND category AND job type AND product group filter)
+  // Optimized filtering with useMemo (search AND location AND category AND job type AND product group AND status filter)
   const filteredJobPostings = useMemo(() => {
     return jobPostings.filter((posting) => {
       // Search filter (by title)
@@ -356,9 +370,42 @@ export function JobPostingsPage() {
           );
         })();
 
-      return matchesSearch && matchesLocation && matchesCategory && matchesJobType && matchesProductGroup;
+      // Status filter
+      const matchesStatus = (() => {
+        if (statusFilter === "all") return true;
+
+        const status = posting.fields.Status;
+        const deadline = posting.fields["Hạn chót nhận"];
+
+        switch (statusFilter) {
+          case "approved":
+            // Status field === "Approved" (including expired ones)
+            return status === "Approved";
+          
+          case "rejected":
+            // Status field === "Reject"
+            return status === "Reject";
+          
+          case "pending":
+            // Status field is null/undefined/empty
+            return isStatusPending(status);
+          
+          case "active":
+            // Status === "Approved" AND deadline has not passed
+            return status === "Approved" && !isDeadlineExpired(deadline);
+          
+          case "expired":
+            // Deadline has passed (regardless of status)
+            return isDeadlineExpired(deadline);
+          
+          default:
+            return true;
+        }
+      })();
+
+      return matchesSearch && matchesLocation && matchesCategory && matchesJobType && matchesProductGroup && matchesStatus;
     });
-  }, [jobPostings, debouncedSearchQuery, selectedLocations, selectedCategories, selectedJobTypes, selectedProductGroups]);
+  }, [jobPostings, debouncedSearchQuery, selectedLocations, selectedCategories, selectedJobTypes, selectedProductGroups, statusFilter]);
 
   // Clear search function
   const handleClearSearch = useCallback(() => {
@@ -384,6 +431,11 @@ export function JobPostingsPage() {
   // Clear product group filter
   const handleClearProductGroups = useCallback(() => {
     setSelectedProductGroups([]);
+  }, []);
+
+  // Clear status filter
+  const handleClearStatus = useCallback(() => {
+    setStatusFilter("all");
   }, []);
 
   // Ref to prevent duplicate calls during StrictMode double render
@@ -1002,10 +1054,30 @@ export function JobPostingsPage() {
                       </div>
                     )}
                   </div>
+
+                  {/* Status Filter */}
+                  <div className="flex-1 sm:max-w-xs">
+                    <label htmlFor="status-filter" className="sr-only">
+                      Filter by status
+                    </label>
+                    <select
+                      id="status-filter"
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm h-10 cursor-pointer"
+                    >
+                      <option value="all">All Status / Tất cả trạng thái</option>
+                      <option value="active">Active / Đang hoạt động</option>
+                      <option value="approved">Approved / Đã duyệt</option>
+                      <option value="pending">Pending / Chờ duyệt</option>
+                      <option value="rejected">Rejected / Từ chối</option>
+                      <option value="expired">Expired / Hết hạn</option>
+                    </select>
+                  </div>
                 </div>
 
                 {/* Selected Filter Tags */}
-                {(selectedLocations.length > 0 || selectedCategories.length > 0 || selectedJobTypes.length > 0 || selectedProductGroups.length > 0) && (
+                {(selectedLocations.length > 0 || selectedCategories.length > 0 || selectedJobTypes.length > 0 || selectedProductGroups.length > 0 || statusFilter !== "all") && (
                   <div className="mt-4 flex flex-wrap items-center gap-2">
                     <span className="text-sm text-muted-foreground">Filtered by:</span>
                     {/* Location Tags */}
@@ -1209,7 +1281,53 @@ export function JobPostingsPage() {
                         </button>
                       </span>
                     ))}
-                    {(selectedLocations.length > 0 || selectedCategories.length > 0 || selectedJobTypes.length > 0 || selectedProductGroups.length > 0) && (
+                    {/* Status Filter Tag */}
+                    {statusFilter !== "all" && (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-700">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="12"
+                          height="12"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <circle cx="12" cy="12" r="10" />
+                          <polyline points="12 6 12 12 16 14" />
+                        </svg>
+                        {statusFilter === "active" && "Active"}
+                        {statusFilter === "approved" && "Approved"}
+                        {statusFilter === "pending" && "Pending"}
+                        {statusFilter === "rejected" && "Rejected"}
+                        {statusFilter === "expired" && "Expired"}
+                        <button
+                          type="button"
+                          onClick={handleClearStatus}
+                          className="ml-1 hover:text-indigo-900 transition-colors"
+                          aria-label="Remove status filter"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <circle cx="12" cy="12" r="10" />
+                            <line x1="15" y1="9" x2="9" y2="15" />
+                            <line x1="9" y1="9" x2="15" y2="15" />
+                          </svg>
+                        </button>
+                      </span>
+                    )}
+                    {(selectedLocations.length > 0 || selectedCategories.length > 0 || selectedJobTypes.length > 0 || selectedProductGroups.length > 0 || statusFilter !== "all") && (
                       <button
                         type="button"
                         onClick={() => {
@@ -1217,6 +1335,7 @@ export function JobPostingsPage() {
                           handleClearCategories();
                           handleClearJobTypes();
                           handleClearProductGroups();
+                          handleClearStatus();
                         }}
                         className="text-sm text-blue-600 hover:text-blue-800 font-medium underline"
                       >
@@ -1228,7 +1347,7 @@ export function JobPostingsPage() {
               </div>
 
               {/* Result Count */}
-              {(debouncedSearchQuery || selectedLocations.length > 0 || selectedCategories.length > 0 || selectedJobTypes.length > 0 || selectedProductGroups.length > 0) && (
+              {(debouncedSearchQuery || selectedLocations.length > 0 || selectedCategories.length > 0 || selectedJobTypes.length > 0 || selectedProductGroups.length > 0 || statusFilter !== "all") && (
                 <div className="mb-4 text-sm text-muted-foreground">
                   Showing {filteredJobPostings.length} of {jobPostings.length}{" "}
                   job posting{jobPostings.length !== 1 ? "s" : ""}
@@ -1265,7 +1384,8 @@ export function JobPostingsPage() {
                         const hasCategories = selectedCategories.length > 0;
                         const hasJobTypes = selectedJobTypes.length > 0;
                         const hasProductGroups = selectedProductGroups.length > 0;
-                        const filterCount = [hasSearch, hasLocations, hasCategories, hasJobTypes, hasProductGroups].filter(Boolean).length;
+                        const hasStatus = statusFilter !== "all";
+                        const filterCount = [hasSearch, hasLocations, hasCategories, hasJobTypes, hasProductGroups, hasStatus].filter(Boolean).length;
 
                         if (filterCount > 1) {
                           return `No job postings match your filters`;
@@ -1279,13 +1399,15 @@ export function JobPostingsPage() {
                           return "No job postings found in selected job types";
                         } else if (hasProductGroups) {
                           return "No job postings found in selected product groups";
+                        } else if (hasStatus) {
+                          return `No job postings found with status: ${statusFilter}`;
                         }
                         return "Try adjusting your search or filters";
                       })()}
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-2">
-                    {(debouncedSearchQuery || selectedLocations.length > 0 || selectedCategories.length > 0 || selectedJobTypes.length > 0 || selectedProductGroups.length > 0) && (
+                    {(debouncedSearchQuery || selectedLocations.length > 0 || selectedCategories.length > 0 || selectedJobTypes.length > 0 || selectedProductGroups.length > 0 || statusFilter !== "all") && (
                       <Button
                         onClick={() => {
                           handleClearSearch();
@@ -1293,6 +1415,7 @@ export function JobPostingsPage() {
                           handleClearCategories();
                           handleClearJobTypes();
                           handleClearProductGroups();
+                          handleClearStatus();
                         }}
                         className="w-full"
                         size="lg"
@@ -1349,6 +1472,16 @@ export function JobPostingsPage() {
                         variant="outline"
                       >
                         Clear product group filter
+                      </Button>
+                    )}
+                    {statusFilter !== "all" && (
+                      <Button
+                        onClick={handleClearStatus}
+                        className="w-full"
+                        size="lg"
+                        variant="outline"
+                      >
+                        Clear status filter
                       </Button>
                     )}
                   </CardContent>
