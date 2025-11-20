@@ -23,15 +23,24 @@ async function fetchProductGroupsWithCache(): Promise<AirtableRecord<ProductGrou
 
   if (cachedData) {
     console.log('[Product Groups Cache] Using IndexedDB cache')
+    // Debug: Log first record to verify Status field is present in cache
+    if (cachedData.length > 0) {
+      console.log('[Product Groups Cache] Cached record fields:', Object.keys(cachedData[0].fields))
+      console.log('[Product Groups Cache] Cached record Status:', cachedData[0].fields.Status)
+    }
     return cachedData
   }
 
   // Layer 3: Fetch from API (rate limiter is applied in airtable-api.ts)
   console.log('[Product Groups Cache] Fetching from API')
-  const response = await getProductGroups({
-    fields: ['Name'], // Only fetch name field needed for display
-  })
+  const response = await getProductGroups()
   const records = response.records
+
+  // Debug: Log first record to verify Status field is present
+  if (records.length > 0) {
+    console.log('[Product Groups Cache] Sample record fields:', Object.keys(records[0].fields))
+    console.log('[Product Groups Cache] Sample record Status:', records[0].fields.Status)
+  }
 
   // Save to IndexedDB cache
   await setCachedData(CACHE_KEYS.productGroups, records)
