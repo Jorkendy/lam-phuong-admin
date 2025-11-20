@@ -234,7 +234,6 @@ export async function getLocations(options?: {
  */
 export async function checkSlugExists(slug: string): Promise<boolean> {
   try {
-    const tableName = getLocationsTableName()
     // Escape single quotes in slug for Airtable formula
     const escapedSlug = slug.replace(/'/g, "''")
     const filterFormula = `{Slug} = '${escapedSlug}'`
@@ -599,7 +598,6 @@ export async function updateProductGroup(recordId: string, fields: Partial<Produ
  */
 export async function checkProductGroupSlugExists(slug: string): Promise<boolean> {
   try {
-    const tableName = getProductGroupsTableName()
     // Escape single quotes in slug for Airtable formula
     const escapedSlug = slug.replace(/'/g, "''")
     const filterFormula = `{Slug} = '${escapedSlug}'`
@@ -806,7 +804,6 @@ export async function deleteJobCategories(recordIds: string[]): Promise<void> {
  */
 export async function checkJobCategorySlugExists(slug: string): Promise<boolean> {
   try {
-    const tableName = getJobCategoriesTableName()
     // Escape single quotes in slug for Airtable formula
     const escapedSlug = slug.replace(/'/g, "''")
     const filterFormula = `{Slug} = '${escapedSlug}'`
@@ -1013,7 +1010,6 @@ export async function deleteJobTypes(recordIds: string[]): Promise<void> {
  */
 export async function checkJobTypeSlugExists(slug: string): Promise<boolean> {
   try {
-    const tableName = getJobTypesTableName()
     // Escape single quotes in slug for Airtable formula
     const escapedSlug = slug.replace(/'/g, "''")
     const filterFormula = `{Slug} = '${escapedSlug}'`
@@ -1220,7 +1216,6 @@ export async function deleteJobPostings(recordIds: string[]): Promise<void> {
  */
 export async function checkJobPostingSlugExists(slug: string): Promise<boolean> {
   try {
-    const tableName = getJobPostingsTableName()
     // Escape single quotes in slug for Airtable formula
     const escapedSlug = slug.replace(/'/g, "''")
     const filterFormula = `{Slug} = '${escapedSlug}'`

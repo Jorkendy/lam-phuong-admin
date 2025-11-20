@@ -1,4 +1,5 @@
-import { ReactNode, useState } from 'react'
+import { useState } from 'react'
+import type { ReactNode } from 'react'
 import { Sidebar } from './Sidebar'
 import { Button } from './ui/button'
 

@@ -109,7 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const handleAirtableCallback = async (code: string, state: string) => {
+  const handleAirtableCallback = async (code: string, _state: string) => {
     try {
       // Exchange authorization code for tokens
       const tokens = await exchangeCodeForToken(code)

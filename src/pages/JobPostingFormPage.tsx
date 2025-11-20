@@ -10,7 +10,6 @@ import { SingleSelect } from '@/components/SingleSelect'
 import { JobPostingPreview } from '@/components/JobPostingPreview'
 import SimpleMDE from 'react-simplemde-editor'
 import 'easymde/dist/easymde.min.css'
-import ReactMarkdown from 'react-markdown'
 import slugify from 'slugify'
 import {
   getJobPostings,
@@ -18,7 +17,6 @@ import {
   updateJobPosting,
   generateUniqueJobPostingSlug,
   type JobPostingFields,
-  type AirtableRecord,
 } from '@/lib/airtable-api'
 import { useLocations } from '@/hooks/useLocations'
 import { useJobCategories } from '@/hooks/useJobCategories'
@@ -37,11 +35,11 @@ const simpleMDEConfig = {
     'link',
     '|',
     'preview',
-  ],
+  ] as const,
   spellChecker: false,
   status: false,
   placeholder: 'Enter content in Markdown format...',
-}
+} as const
 
 export function JobPostingFormPage() {
   const navigate = useNavigate()
